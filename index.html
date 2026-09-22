@@ -10,6 +10,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- THÊM THƯ VIỆN PEERJS ĐỂ ĐỒNG BỘ MÁY TÍNH - ĐIỆN THOẠI QUA INTERNET -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media print {
@@ -131,6 +133,34 @@
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- GIAO DIỆN QUÉT CHUYÊN DỤNG CHO ĐIỆN THOẠI (ẨN MẶC ĐỊNH) -->
+    <div id="phone-scanner-view" class="fixed inset-0 bg-slate-950 z-[100] hidden flex-col p-4 text-center justify-between">
+        <div class="bg-slate-900 border border-amber-400/30 p-3 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-mobile-screen-button text-amber-400 text-xl animate-bounce"></i>
+                <span class="font-black text-amber-400 text-sm">CAMERA QUÉT ĐIỆN THOẠI</span>
+            </div>
+            <span id="phone-conn-status" class="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-1 rounded-full">Đang kết nối...</span>
+        </div>
+
+        <div class="relative w-full flex-1 my-3 bg-slate-900 rounded-3xl overflow-hidden border-2 border-indigo-500/50 flex flex-col items-center justify-center">
+            <video id="phone-qr-video" class="w-full h-full object-cover" playsinline></video>
+            <canvas id="phone-qr-canvas" class="hidden"></canvas>
+            <canvas id="phone-qr-overlay" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+            <div id="phone-scan-alert" class="absolute bottom-4 inset-x-4 bg-emerald-500 text-slate-950 font-black py-2 px-3 rounded-xl text-sm shadow-2xl transition-all opacity-0 transform translate-y-2">
+                Đã quét thẻ!
+            </div>
+        </div>
+
+        <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
+            <p class="text-xs text-slate-300 font-medium">Hướng camera về phía thẻ học sinh. Kết quả sẽ tự động gửi tới máy tính trình chiếu.</p>
+            <button onclick="window.location.href=window.location.pathname" class="btn-3d w-full py-2 bg-rose-600 text-white font-bold rounded-xl text-xs">
+                Thoát chế độ quét điện thoại
+            </button>
+        </div>
+    </div>
 
     <!-- HEADER NAVIGATION -->
     <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-2xl flex-none z-50 border-b border-indigo-500/30">
@@ -605,31 +635,119 @@
         let currentUser = null;
         let authIsSignUp = false;
         let syncChannel = null;
+        let peer = null;
+        let peerConn = null;
+        let isPhoneScannerMode = false;
         let syncRoomId = 'ROOM_' + Math.floor(100000 + Math.random() * 900000);
 
         let isCameraActive = false;
         let videoStream = null;
         let scanAnimationId = null;
 
-        // TÍCH HỢP REALTIME SYNC QUA BROADCAST CHANNEL / WEBRTC BROKER
+        // TÍCH HỢP ĐỒNG BỘ REALTIME INTERNET / WEBRTC PEERJS
         function initRealtimeSync() {
+            // 1. BroadcastChannel dùng cục bộ giữa các tab
             try {
                 syncChannel = new BroadcastChannel('QUET_TRAC_NGHIEM_SYNC_' + syncRoomId);
                 syncChannel.onmessage = function(e) {
                     if (e.data && e.data.type === 'SCAN_RESULT') {
-                        const { cardId, option, questionIndex } = e.data;
-                        const qIdx = questionIndex !== undefined ? questionIndex : appData.currentQuestionIndex;
-                        if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
-                        if (appData.responses[qIdx][cardId] !== option) {
-                            appData.responses[qIdx][cardId] = option;
-                            playBeepSound();
-                            saveData();
-                            renderCardStatusGrid();
-                        }
+                        handleIncomingScanResult(e.data);
                     }
                 };
-            } catch(err) {
-                console.log('BroadcastChannel initialized in local scope.');
+            } catch(err) { console.log('Local BroadcastChannel Error:', err); }
+
+            // 2. Khởi tạo PeerJS kết nối xa qua Internet (Máy tính vs Điện thoại)
+            if (typeof Peer !== 'undefined') {
+                const pcPeerId = 'QUET_TN_PC_' + syncRoomId;
+                
+                if (isPhoneScannerMode) {
+                    // Chế độ Điện thoại kết nối tới Máy tính
+                    peer = new Peer();
+                    peer.on('open', function(id) {
+                        document.getElementById('phone-conn-status').innerText = 'Đang kết nối tới Laptop...';
+                        peerConn = peer.connect(pcPeerId);
+                        
+                        peerConn.on('open', function() {
+                            document.getElementById('phone-conn-status').innerText = '✓ Đã kết nối Laptop';
+                            document.getElementById('phone-conn-status').className = 'text-[10px] font-bold bg-emerald-400 text-slate-950 px-2 py-1 rounded-full';
+                        });
+
+                        peerConn.on('close', function() {
+                            document.getElementById('phone-conn-status').innerText = 'Mất kết nối!';
+                            document.getElementById('phone-conn-status').className = 'text-[10px] font-bold bg-rose-500 text-white px-2 py-1 rounded-full';
+                        });
+                    });
+                } else {
+                    // Chế độ Máy tính (Lắng nghe kết nối từ điện thoại)
+                    peer = new Peer(pcPeerId);
+                    peer.on('open', function(id) {
+                        updateSyncUIState(true);
+                    });
+
+                    peer.on('connection', function(conn) {
+                        peerConn = conn;
+                        updateSyncUIState(true, '✓ Điện thoại đã kết nối!');
+                        
+                        conn.on('data', function(data) {
+                            if (data && data.type === 'SCAN_RESULT') {
+                                handleIncomingScanResult(data);
+                            }
+                        });
+
+                        conn.on('close', function() {
+                            updateSyncUIState(true, 'Đã ngắt kết nối Điện thoại');
+                        });
+                    });
+
+                    peer.on('error', function(err) {
+                        console.log('PeerJS PC Error:', err);
+                    });
+                }
+            }
+        }
+
+        function updateSyncUIState(isConnected, textMsg) {
+            const statusText = document.getElementById('sync-status-text');
+            const roomInfo = document.getElementById('sync-room-info');
+
+            if (textMsg) {
+                if (statusText) statusText.innerText = textMsg;
+                if (roomInfo) roomInfo.innerText = `Mã Phòng: ${syncRoomId} | ${textMsg}`;
+            } else {
+                if (statusText) statusText.innerText = `Đã Mở Phòng ${syncRoomId}`;
+                if (roomInfo) roomInfo.innerText = `Mã Phòng: ${syncRoomId} | Đang chờ điện thoại quét QR...`;
+            }
+        }
+
+        function handleIncomingScanResult(data) {
+            const { cardId, option, questionIndex } = data;
+            const qIdx = questionIndex !== undefined ? questionIndex : appData.currentQuestionIndex;
+            if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
+            
+            if (appData.responses[qIdx][cardId] !== option) {
+                appData.responses[qIdx][cardId] = option;
+                playBeepSound();
+                saveData();
+                renderCardStatusGrid();
+            }
+        }
+
+        function sendScanResultToPC(cardId, option, qIdx) {
+            const payload = {
+                type: 'SCAN_RESULT',
+                cardId: cardId,
+                option: option,
+                questionIndex: qIdx
+            };
+
+            // Gửi qua BroadcastChannel
+            if (syncChannel) {
+                try { syncChannel.postMessage(payload); } catch(e){}
+            }
+
+            // Gửi qua WebRTC PeerJS tới Laptop xa
+            if (peerConn && peerConn.open) {
+                peerConn.send(payload);
             }
         }
 
@@ -640,7 +758,7 @@
             const qrContainer = document.getElementById('phone-qr-container');
             qrContainer.innerHTML = '';
             
-            const currentUrl = window.location.href.split('#')[0];
+            const currentUrl = window.location.href.split('?')[0].split('#')[0];
             const phoneScanUrl = `${currentUrl}?room=${syncRoomId}&mode=phone_scanner`;
 
             new QRCode(qrContainer, {
@@ -652,7 +770,7 @@
                 correctLevel: QRCode.CorrectLevel.M
             });
 
-            document.getElementById('sync-room-info').innerText = `Mã Phòng: ${syncRoomId} | Đang chờ kết nối...`;
+            updateSyncUIState(true);
         }
 
         function closeSyncModal() {
@@ -1307,8 +1425,10 @@
                 const detectedOption = getOptionFromCode(code);
 
                 const detectedLabel = document.getElementById('scan-detected-label');
-                detectedLabel.classList.remove('hidden');
-                detectedLabel.innerText = `Thẻ #${cardId} → Đáp án ${detectedOption}`;
+                if (detectedLabel) {
+                    detectedLabel.classList.remove('hidden');
+                    detectedLabel.innerText = `Thẻ #${cardId} → Đáp án ${detectedOption}`;
+                }
 
                 const qIdx = appData.currentQuestionIndex;
                 if (!appData.responses[qIdx]) {
@@ -1318,15 +1438,8 @@
                 if (appData.responses[qIdx][cardId] !== detectedOption) {
                     appData.responses[qIdx][cardId] = detectedOption;
                     
-                    // Phát tín hiệu đồng bộ online tới Laptop nếu quét từ Điện thoại
-                    if (syncChannel) {
-                        syncChannel.postMessage({
-                            type: 'SCAN_RESULT',
-                            cardId: cardId,
-                            option: detectedOption,
-                            questionIndex: qIdx
-                        });
-                    }
+                    // Phát tín hiệu đồng bộ realtime về Laptop
+                    sendScanResultToPC(cardId, detectedOption, qIdx);
 
                     playBeepSound();
                     saveData();
@@ -1667,6 +1780,7 @@
         function renderCardStatusGrid() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             const container = document.getElementById('card-status-grid');
+            if (!container) return;
             container.innerHTML = '';
 
             if (!currentClass) return;
@@ -1826,14 +1940,68 @@
             });
         }
 
+        // KHỞI CHẠY CAMERA RIÊNG CHO CHẾ ĐỘ ĐIỆN THOẠI
+        function startPhoneScannerCamera() {
+            const video = document.getElementById('phone-qr-video');
+            const canvas = document.getElementById('phone-qr-canvas');
+            const overlay = document.getElementById('phone-qr-overlay');
+
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+            }).then(stream => {
+                video.srcObject = stream;
+                video.play();
+
+                function loopPhoneScan() {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.height = video.videoHeight;
+                        canvas.width = video.videoWidth;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                        drawScanOverlay(video, overlay, code);
+
+                        if (code && code.data && code.data.startsWith("CARD_")) {
+                            const cardId = parseInt(code.data.replace("CARD_", ""));
+                            const opt = getOptionFromCode(code);
+                            
+                            sendScanResultToPC(cardId, opt, appData.currentQuestionIndex);
+
+                            // Hiệu ứng thông báo ngắn trên điện thoại
+                            const alertBox = document.getElementById('phone-scan-alert');
+                            alertBox.innerText = `✓ Đã quét Thẻ #${cardId} → Đáp án ${opt}`;
+                            alertBox.classList.remove('opacity-0', 'translate-y-2');
+                            setTimeout(() => {
+                                alertBox.classList.add('opacity-0', 'translate-y-2');
+                            }, 1200);
+                        }
+                    }
+                    requestAnimationFrame(loopPhoneScan);
+                }
+                requestAnimationFrame(loopPhoneScan);
+            }).catch(err => {
+                alert("Không mở được camera điện thoại: " + err.message);
+            });
+        }
+
         window.onload = function() {
-            // Kiểm tra xem có đang mở ở chế độ Quét Điện thoại không
             const urlParams = new URLSearchParams(window.location.search);
             const room = urlParams.get('room');
+            const mode = urlParams.get('mode');
+
             if (room) {
                 syncRoomId = room;
             }
-            
+
+            if (mode === 'phone_scanner') {
+                isPhoneScannerMode = true;
+                document.getElementById('phone-scanner-view').classList.remove('hidden');
+                document.getElementById('phone-scanner-view').classList.add('flex');
+                startPhoneScannerCamera();
+            }
+
             initRealtimeSync();
             loadData();
             renderPresentation();
