@@ -698,9 +698,7 @@
                     initRealtimeSync();
                     renderClasses();
                     updateAuthUI();
-                    // Hiển thị câu hỏi ngay khi tải trang (tab presentation là mặc định)
                     renderPresentation();
-                    // Đánh dấu tab presentation đang active
                     ['classes', 'quizzes', 'presentation'].forEach(t => {
                         const tabBtn = document.getElementById(`tab-${t}`);
                         if (tabBtn) {
@@ -852,11 +850,10 @@
             }
         }
 
-        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS & CÂN BẰNG SÁNG + ĐA ĐIỂM
+        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS
         function startPhoneHDCamera() {
             const video = document.getElementById('phone-qr-video');
             
-            // Yêu cầu độ phân giải 4K / Ultra-HD và Lấy nét tự động liên tục
             const constraints = {
                 video: {
                     facingMode: "environment",
@@ -875,7 +872,6 @@
                     phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
                 })
                 .catch(err => {
-                    // Fallback độ phân giải 1080p cơ bản nếu không hỗ trợ 4K
                     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } })
                         .then(stream => {
                             phoneVideoStream = stream;
@@ -887,18 +883,11 @@
                 });
         }
 
-        /**
-         * QUÉT ĐA ĐIỂM SIÊU NHANH + TĂNG TƯƠNG PHẢN CHO KHOẢNG CÁCH 10M
-         * - Chạy jsQR trên toàn khung hình + 4 góc + vùng trung tâm
-         * - Áp dụng 2 mức enhance (contrast cao + adaptive threshold)
-         * - Trả về mảng các code duy nhất (cardId)
-         */
         function detectMultipleQRCodes(imageData) {
-            const results = new Map(); // cardId -> {code, option}
+            const results = new Map();
             const w = imageData.width;
             const h = imageData.height;
 
-            // Helper: scan one ImageData and collect CARD_ codes
             const tryScan = (imgData) => {
                 const code = jsQR(imgData.data, imgData.width, imgData.height, {
                     inversionAttempts: "dontInvert"
@@ -911,28 +900,24 @@
                 }
             };
 
-            // 1. Full image - raw
             tryScan(imageData);
 
-            // 2. Full image - enhanced (high contrast for 10m)
             const enhanced1 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
             enhanceImageForDistance(enhanced1, 2.2, 110);
             tryScan(enhanced1);
 
-            // 3. Full image - second pass (stronger binary for very far / low light)
             if (results.size === 0) {
                 const enhanced2 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
                 enhanceImageForDistance(enhanced2, 2.8, 100);
                 tryScan(enhanced2);
             }
 
-            // 4. Multi-region ROI (4 corners + center) – giúp bắt nhiều thẻ cùng lúc
             const rois = [
-                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },           // top-left
-                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // top-right
-                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // bottom-left
-                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // bottom-right
-                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }  // center
+                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }
             ];
 
             const srcData = imageData.data;
@@ -950,7 +935,6 @@
                 }
                 const roiImg = new ImageData(roiData, roi.rw, roi.rh);
                 tryScan(roiImg);
-                // Enhanced ROI
                 enhanceImageForDistance(roiImg, 2.0, 115);
                 tryScan(roiImg);
             });
@@ -964,7 +948,6 @@
             const overlay = document.getElementById('phone-qr-overlay');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // Giảm độ phân giải xử lý một chút nếu quá lớn để tăng tốc (vẫn giữ nét cho 10m)
                 const maxProcessW = 1920;
                 let procW = video.videoWidth;
                 let procH = video.videoHeight;
@@ -982,10 +965,8 @@
                 const imageData = ctx.getImageData(0, 0, procW, procH);
                 const detectedList = detectMultipleQRCodes(imageData);
 
-                // Vẽ overlay cho code đầu tiên (nếu có)
                 drawScanOverlay(video, overlay, detectedList.length > 0 ? detectedList[0].code : null);
 
-                // Xử lý tất cả thẻ đã phát hiện (có cooldown)
                 const now = Date.now();
                 let alertTexts = [];
                 detectedList.forEach(({ code, option }) => {
@@ -1013,15 +994,11 @@
             phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
         }
 
-        // THUẬT TOÁN XỬ LÝ ẢNH NHỊ PHÂN HÓA NÂNG CAO - GIÚP QUÉT XA ĐẾN 10M
-        // factor: độ tăng contrast, threshold: ngưỡng nhị phân (càng thấp càng nhạy với ảnh tối)
         function enhanceImageForDistance(imageData, factor = 1.8, threshold = 120) {
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
-                // Grayscale + contrast stretch
                 let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
                 gray = (gray - 128) * factor + 128;
-                // Adaptive-ish binary
                 const v = gray > threshold ? 255 : 0;
                 data[i] = v;
                 data[i + 1] = v;
@@ -1056,16 +1033,15 @@
             document.getElementById('sync-modal').classList.remove('flex');
         }
 
-        // ==================== FIREBASE CONFIG ====================
-        // ★★★ BẠN CẦN THAY CÁC GIÁ TRỊ DƯỚI BẰNG CONFIG TỪ FIREBASE CONSOLE ★★★
-        // Hướng dẫn: https://console.firebase.google.com → Project Settings → Your apps → Web
+        // FIREBASE CONFIG
         const FIREBASE_CONFIG = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
+            authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
+            projectId: "quet-nhanh-trac-nghiem",
+            storageBucket: "quet-nhanh-trac-nghiem.firebasestorage.app",
+            messagingSenderId: "602826802314",
+            appId: "1:602826802314:web:54e986094670dc25aed973",
+            measurementId: "G-WXY687F7WL"
         };
 
         let firebaseReady = false;
@@ -1076,14 +1052,7 @@
 
         function initFirebase() {
             try {
-                if (typeof firebase === 'undefined') {
-                    console.warn('Firebase SDK chưa tải.');
-                    return false;
-                }
-                if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
-                    console.warn('Chưa cấu hình FIREBASE_CONFIG. Auth cloud chưa hoạt động.');
-                    return false;
-                }
+                if (typeof firebase === 'undefined') return false;
                 if (!firebase.apps.length) {
                     firebase.initializeApp(FIREBASE_CONFIG);
                 }
@@ -1097,7 +1066,6 @@
             }
         }
 
-        // ==================== SAFE LOCAL STORAGE (cache offline) ====================
         const _memStore = {};
         function safeGetItem(key) {
             try {
@@ -1115,14 +1083,7 @@
             _memStore[key] = value;
             return false;
         }
-        function safeRemoveItem(key) {
-            try {
-                if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-            } catch (e) {}
-            delete _memStore[key];
-        }
 
-        // ==================== AUTH + FIRESTORE (đồng bộ mọi thiết bị) ====================
         function getDefaultAppData() {
             return {
                 classes: [{
@@ -1160,7 +1121,6 @@
         }
 
         function loadAuthSession() {
-            // Firebase Auth tự khôi phục session qua onAuthStateChanged
             if (!initFirebase()) return;
             firebaseAuth.onAuthStateChanged(async (user) => {
                 if (user) {
@@ -1221,7 +1181,7 @@
                 return;
             }
             if (!firebaseReady && !initFirebase()) {
-                alert('Chưa cấu hình Firebase.\n\nMở file index.html, tìm FIREBASE_CONFIG và dán config từ Firebase Console.\nXem hướng dẫn chi tiết ở cuối trang / README.');
+                alert('Chưa cấu hình Firebase hợp lệ.');
                 return;
             }
             authIsSignUp = false;
@@ -1251,9 +1211,6 @@
             document.getElementById('auth-confirm-pwd-wrap').classList.toggle('hidden', !authIsSignUp);
             document.getElementById('auth-displayname-wrap').classList.toggle('hidden', !authIsSignUp);
             document.getElementById('auth-modal-title').innerText = authIsSignUp ? 'Đăng Ký Tài Khoản Pro' : 'Đăng Nhập Tài Khoản Pro';
-            document.getElementById('auth-modal-subtitle').innerText = authIsSignUp
-                ? 'Tạo tài khoản mới – dữ liệu đồng bộ trên Laptop & Điện thoại'
-                : 'Đăng nhập bằng Email – đồng bộ dữ liệu trên mọi thiết bị';
             document.getElementById('btn-auth-submit').innerHTML = authIsSignUp
                 ? '<i class="fa-solid fa-user-plus mr-1.5"></i>ĐĂNG KÝ NGAY'
                 : '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
@@ -1274,46 +1231,17 @@
             }
         }
 
-        function firebaseErrorMessage(code) {
-            const map = {
-                'auth/email-already-in-use': 'Email này đã được đăng ký. Hãy đăng nhập.',
-                'auth/invalid-email': 'Email không hợp lệ.',
-                'auth/weak-password': 'Mật khẩu quá yếu (tối thiểu 6 ký tự).',
-                'auth/user-not-found': 'Không tìm thấy tài khoản với email này.',
-                'auth/wrong-password': 'Mật khẩu không đúng.',
-                'auth/invalid-credential': 'Email hoặc mật khẩu không đúng.',
-                'auth/too-many-requests': 'Thử quá nhiều lần. Vui lòng đợi vài phút.',
-                'auth/network-request-failed': 'Lỗi mạng. Kiểm tra kết nối Internet.',
-                'auth/operation-not-allowed': 'Email/Password chưa được bật trong Firebase Console.'
-            };
-            return map[code] || ('Lỗi: ' + (code || 'không xác định'));
-        }
-
         async function handleAuthSubmit(e) {
             e.preventDefault();
-            if (!firebaseReady && !initFirebase()) {
-                showAuthMessage('error', 'Chưa cấu hình Firebase. Xem hướng dẫn setup.');
-                return;
-            }
+            if (!firebaseReady && !initFirebase()) return;
 
             const email = document.getElementById('auth-username').value.trim().toLowerCase();
             const password = document.getElementById('auth-password').value;
             const confirmPwd = document.getElementById('auth-password-confirm').value;
             const displayName = (document.getElementById('auth-displayname').value || '').trim();
 
-            if (!email || !email.includes('@')) {
-                showAuthMessage('error', 'Vui lòng nhập email hợp lệ.');
-                return;
-            }
-            if (password.length < 6) {
-                showAuthMessage('error', 'Mật khẩu phải có ít nhất 6 ký tự.');
-                return;
-            }
-
             const btn = document.getElementById('btn-auth-submit');
-            const oldHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Đang xử lý...';
 
             try {
                 if (authIsSignUp) {
@@ -1322,50 +1250,33 @@
                         return;
                     }
                     const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
-                    if (displayName) {
-                        await cred.user.updateProfile({ displayName: displayName });
-                    }
-                    // Lưu profile + dữ liệu mặc định lên Firestore
+                    if (displayName) await cred.user.updateProfile({ displayName: displayName });
                     await firebaseDb.collection('users').doc(cred.user.uid).set({
                         email: email,
                         displayName: displayName || email.split('@')[0],
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         appData: getDefaultAppData()
                     }, { merge: true });
 
                     currentUser = displayName || email;
-                    showAuthMessage('success', 'Đăng ký thành công! Đang đồng bộ...');
-                    setTimeout(() => {
-                        closeAuthModal();
-                        updateAuthUI();
-                        renderClasses();
-                        renderPresentation();
-                        alert('Chào mừng bạn!\nTài khoản đã tạo. Dữ liệu sẽ đồng bộ giữa Laptop và Điện thoại khi đăng nhập cùng Email.');
-                    }, 700);
+                    showAuthMessage('success', 'Đăng ký thành công!');
+                    setTimeout(() => { closeAuthModal(); updateAuthUI(); renderClasses(); renderPresentation(); }, 600);
                 } else {
                     await firebaseAuth.signInWithEmailAndPassword(email, password);
                     currentUser = firebaseAuth.currentUser.displayName || email;
                     showAuthMessage('success', 'Đăng nhập thành công!');
-                    setTimeout(() => {
-                        closeAuthModal();
-                        updateAuthUI();
-                    }, 500);
+                    setTimeout(() => { closeAuthModal(); updateAuthUI(); }, 500);
                 }
             } catch (err) {
-                console.error(err);
-                showAuthMessage('error', firebaseErrorMessage(err.code) || err.message);
+                showAuthMessage('error', err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = oldHtml;
             }
         }
 
         async function handleSignOut() {
             if (!currentUser) return;
-            if (!confirm(`Đăng xuất khỏi "${currentUser}"?\nDữ liệu vẫn được lưu trên cloud.`)) return;
-            try {
-                if (firebaseAuth) await firebaseAuth.signOut();
-            } catch (e) { console.warn(e); }
+            if (!confirm(`Đăng xuất khỏi "${currentUser}"?`)) return;
+            try { if (firebaseAuth) await firebaseAuth.signOut(); } catch (e) {}
             currentUser = null;
             appData = getDefaultAppData();
             updateAuthUI();
@@ -1382,42 +1293,30 @@
             }
         }
 
-        // ---- Load / Save dữ liệu (Cloud + local cache) ----
         async function loadDataFromCloud(uid) {
             if (!firebaseDb || !uid) return;
             isLoadingCloudData = true;
             try {
                 const doc = await firebaseDb.collection('users').doc(uid).get();
                 if (doc.exists && doc.data().appData) {
-                    const cloud = doc.data().appData;
-                    appData = cloud;
-                    if (!appData.responses || Array.isArray(appData.responses)) appData.responses = {};
+                    appData = doc.data().appData;
+                    if (!appData.responses) appData.responses = {};
                     if (!Array.isArray(appData.classes)) appData.classes = [];
                     if (!Array.isArray(appData.quizzes)) appData.quizzes = [];
-                    if (typeof appData.currentQuestionIndex !== 'number') appData.currentQuestionIndex = 0;
-                    // Cache local
                     safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
                 } else {
-                    // Lần đầu: đẩy dữ liệu mặc định lên cloud
                     appData = getDefaultAppData();
-                    await firebaseDb.collection('users').doc(uid).set({
-                        appData: appData,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                    await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
                 }
             } catch (e) {
-                console.warn('Load cloud thất bại, thử cache local:', e);
                 const cached = safeGetItem('plickers_cloud_cache_' + uid);
-                if (cached) {
-                    try { appData = JSON.parse(cached); } catch (_) {}
-                }
+                if (cached) { try { appData = JSON.parse(cached); } catch (_) {} }
             } finally {
                 isLoadingCloudData = false;
             }
         }
 
         function loadData() {
-            // Khi chưa login: dùng guest local
             if (!firebaseAuth || !firebaseAuth.currentUser) {
                 try {
                     const saved = safeGetItem('plickers_pro_169_data_guest');
@@ -1425,17 +1324,14 @@
                         const parsed = JSON.parse(saved);
                         if (parsed && typeof parsed === 'object') {
                             appData = parsed;
-                            if (!appData.responses || Array.isArray(appData.responses)) appData.responses = {};
+                            if (!appData.responses) appData.responses = {};
                         }
                     }
                 } catch (e) {}
-                return;
             }
-            // Đã login: onAuthStateChanged sẽ gọi loadDataFromCloud
         }
 
         function saveData() {
-            // Luôn cache local
             try {
                 const key = (firebaseAuth && firebaseAuth.currentUser)
                     ? 'plickers_cloud_cache_' + firebaseAuth.currentUser.uid
@@ -1443,20 +1339,13 @@
                 safeSetItem(key, JSON.stringify(appData));
             } catch (e) {}
 
-            // Debounce ghi lên Firestore (tránh spam khi quét liên tục)
             if (!firebaseAuth || !firebaseAuth.currentUser || !firebaseDb || isLoadingCloudData) return;
             clearTimeout(saveDataTimer);
             saveDataTimer = setTimeout(async () => {
                 try {
                     const uid = firebaseAuth.currentUser.uid;
-                    // Không lưu base64 ảnh/audio quá lớn lên free tier nếu muốn tối ưu
-                    await firebaseDb.collection('users').doc(uid).set({
-                        appData: appData,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                } catch (e) {
-                    console.warn('Lưu cloud thất bại:', e);
-                }
+                    await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
+                } catch (e) {}
             }, 800);
         }
 
@@ -1475,81 +1364,61 @@
         }
 
         function exportClassesJSON() {
-            if (!appData.classes || appData.classes.length === 0) {
-                alert('Không có dữ liệu lớp học nào để xuất!');
-                return;
-            }
+            if (!appData.classes || appData.classes.length === 0) return alert('Không có dữ liệu lớp học nào!');
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData.classes, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `QUET_TRAC_NGHIEM_Lop_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `LopHoc_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         }
 
         function importClassesJSON(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
-                    const importedClasses = JSON.parse(evt.target.result);
-                    if (Array.isArray(importedClasses)) {
-                        appData.classes = importedClasses;
-                        if (appData.classes.length > 0) {
-                            appData.selectedClassId = appData.classes[0].id;
-                        }
+                    const imported = JSON.parse(evt.target.result);
+                    if (Array.isArray(imported)) {
+                        appData.classes = imported;
+                        if (appData.classes.length > 0) appData.selectedClassId = appData.classes[0].id;
                         saveData();
                         renderClasses();
                         alert('Nhập danh sách lớp học thành công!');
-                    } else {
-                        alert('Định dạng file Lớp JSON không hợp lệ!');
                     }
-                } catch (err) {
-                    alert('Lỗi khi đọc file Lớp JSON: ' + err.message);
-                }
+                } catch (err) { alert('Lỗi file JSON!'); }
             };
             reader.readAsText(file);
         }
 
         function exportQuizzesJSON() {
-            if (!appData.quizzes || appData.quizzes.length === 0) {
-                alert('Không có dữ liệu bài test nào để xuất!');
-                return;
-            }
+            if (!appData.quizzes || appData.quizzes.length === 0) return alert('Không có dữ liệu!');
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData.quizzes, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `QUET_TRAC_NGHIEM_BaiTest_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `BaiTest_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         }
 
         function importQuizzesJSON(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
-                    const importedQuizzes = JSON.parse(evt.target.result);
-                    if (Array.isArray(importedQuizzes)) {
-                        appData.quizzes = importedQuizzes;
-                        if (appData.quizzes.length > 0) {
-                            appData.selectedQuizId = appData.quizzes[0].id;
-                        }
+                    const imported = JSON.parse(evt.target.result);
+                    if (Array.isArray(imported)) {
+                        appData.quizzes = imported;
+                        if (appData.quizzes.length > 0) appData.selectedQuizId = appData.quizzes[0].id;
                         saveData();
                         renderQuizzesView();
-                        alert('Nhập danh sách bài test thành công!');
-                    } else {
-                        alert('Định dạng file JSON không hợp lệ!');
+                        alert('Nhập bài test thành công!');
                     }
-                } catch (err) {
-                    alert('Lỗi khi đọc file JSON: ' + err.message);
-                }
+                } catch (err) { alert('Lỗi file JSON!'); }
             };
             reader.readAsText(file);
         }
@@ -1557,6 +1426,7 @@
         function renderQuizDropdowns() {
             const selectClassQuiz = document.getElementById('select-quiz-for-class');
             const selectActiveQuiz = document.getElementById('select-active-quiz');
+            if (!selectClassQuiz || !selectActiveQuiz) return;
             
             selectClassQuiz.innerHTML = '';
             selectActiveQuiz.innerHTML = '';
@@ -1567,21 +1437,14 @@
             });
 
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (currentClass) {
-                selectClassQuiz.value = currentClass.assignedQuizId || appData.quizzes[0]?.id;
-            }
-
+            if (currentClass) selectClassQuiz.value = currentClass.assignedQuizId || appData.quizzes[0]?.id;
             selectActiveQuiz.value = appData.selectedQuizId;
         }
 
         function addNewQuizGroup() {
-            const title = prompt('Nhập tên Bài Test / Bộ câu hỏi mới:');
+            const title = prompt('Nhập tên Bài Test mới:');
             if (title && title.trim()) {
-                const newQuiz = {
-                    id: 'quiz_' + Date.now(),
-                    title: title.trim(),
-                    questions: []
-                };
+                const newQuiz = { id: 'quiz_' + Date.now(), title: title.trim(), questions: [] };
                 appData.quizzes.push(newQuiz);
                 appData.selectedQuizId = newQuiz.id;
                 saveData();
@@ -1592,8 +1455,7 @@
         function renameCurrentQuizGroup() {
             const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
             if (!currentQuiz) return;
-
-            const newTitle = prompt('Nhập tên mới cho Bài Test:', currentQuiz.title);
+            const newTitle = prompt('Nhập tên mới:', currentQuiz.title);
             if (newTitle && newTitle.trim()) {
                 currentQuiz.title = newTitle.trim();
                 saveData();
@@ -1602,12 +1464,9 @@
         }
 
         function deleteCurrentQuizGroup() {
-            if (appData.quizzes.length <= 1) {
-                alert('Hệ thống cần ít nhất 1 Bài Test!');
-                return;
-            }
+            if (appData.quizzes.length <= 1) return alert('Hệ thống cần ít nhất 1 Bài Test!');
             const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
-            if (confirm(`Bạn có chắc chắn muốn xóa "${currentQuiz.title}"?`)) {
+            if (confirm(`Xóa bài test "${currentQuiz.title}"?`)) {
                 appData.quizzes = appData.quizzes.filter(q => q.id !== appData.selectedQuizId);
                 appData.selectedQuizId = appData.quizzes[0].id;
                 saveData();
@@ -1633,7 +1492,6 @@
         function updateClassSchedule() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!currentClass) return;
-
             currentClass.scheduleDate = document.getElementById('class-schedule-date').value || '';
             currentClass.scheduleTime = document.getElementById('class-schedule-time').value || '';
             saveData();
@@ -1643,31 +1501,25 @@
         function resetCurrentQuestionResults() {
             const qIdx = appData.currentQuestionIndex;
             if (appData.responses[qIdx] && Object.keys(appData.responses[qIdx]).length > 0) {
-                if (confirm(`Xóa toàn bộ kết quả đã quét của Câu ${qIdx + 1}?`)) {
+                if (confirm(`Xóa kết quả quét của Câu ${qIdx + 1}?`)) {
                     appData.responses[qIdx] = {};
                     saveData();
                     renderCardStatusGrid();
                 }
-            } else {
-                alert('Chưa có dữ liệu quét cho câu hiện tại!');
-            }
+            } else { alert('Chưa có dữ liệu quét!'); }
         }
 
         function resetAllQuizResults() {
             if (Object.keys(appData.responses).length > 0) {
-                if (confirm('Bạn chắc chắn muốn RESET TOÀN BỘ kết quả quét của tất cả các câu?')) {
+                if (confirm('Reset TOÀN BỘ kết quả quét?')) {
                     appData.responses = {};
                     saveData();
                     renderCardStatusGrid();
                 }
-            } else {
-                alert('Chưa có dữ liệu kết quả nào để reset!');
-            }
+            } else { alert('Chưa có dữ liệu để reset!'); }
         }
 
-        function resetClassResults() {
-            resetAllQuizResults();
-        }
+        function resetClassResults() { resetAllQuizResults(); }
 
         function renderQuizzesView() {
             renderQuizDropdowns();
@@ -1678,11 +1530,12 @@
 
         function renderQuestions() {
             const container = document.getElementById('questions-container');
+            if (!container) return;
             container.innerHTML = '';
 
             const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
             if (!currentQuiz || currentQuiz.questions.length === 0) {
-                container.innerHTML = `<div class="bg-slate-900 p-8 rounded-2xl text-center text-slate-500 text-xs border border-slate-800">Chưa có câu hỏi nào trong bài test này. Nhấn "Thêm Câu Hỏi" để tạo.</div>`;
+                container.innerHTML = `<div class="bg-slate-900 p-8 rounded-2xl text-center text-slate-500 text-xs border border-slate-800">Chưa có câu hỏi nào. Nhấn "Thêm Câu Hỏi" để tạo.</div>`;
                 return;
             }
 
@@ -1692,20 +1545,15 @@
                         <div class="flex justify-between items-start mb-2">
                             <span class="font-black text-slate-950 bg-amber-400 px-3 py-1 rounded-xl text-xs">Câu hỏi ${idx + 1}</span>
                             <div class="flex items-center space-x-3">
-                                <button onclick="editQuestion(${idx})" class="btn-3d text-blue-400 hover:text-blue-300 text-xs font-bold">
-                                    <i class="fa-solid fa-pen-to-square mr-1"></i>Sửa
-                                </button>
-                                <button onclick="deleteQuestion(${idx})" class="btn-3d text-rose-400 hover:text-rose-300 text-xs font-bold">
-                                    <i class="fa-solid fa-trash mr-1"></i>Xóa
-                                </button>
+                                <button onclick="editQuestion(${idx})" class="btn-3d text-blue-400 hover:text-blue-300 text-xs font-bold"><i class="fa-solid fa-pen-to-square mr-1"></i>Sửa</button>
+                                <button onclick="deleteQuestion(${idx})" class="btn-3d text-rose-400 hover:text-rose-300 text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i>Xóa</button>
                             </div>
                         </div>
                         <p class="font-black text-amber-300 text-base mb-3">${q.text}</p>
-                        
                         <div class="grid grid-cols-2 gap-2 text-xs">
                             ${['A','B','C','D'].map(opt => `
                                 <div class="p-2 rounded-xl border ${q.correct === opt ? 'bg-emerald-950/80 border-emerald-400 font-bold text-emerald-200' : 'bg-slate-950 border-slate-800 text-slate-300'}">
-                                    <div><strong class="text-amber-400">${opt}:</strong> ${q.options[opt]}</div>${q.optionImages && q.optionImages[opt] ? `<img src="${q.optionImages[opt]}" class="h-12 mt-1 rounded-lg border border-slate-700 object-contain">` : ''}
+                                    <div><strong class="text-amber-400">${opt}:</strong> ${q.options[opt]}</div>
                                 </div>
                             `).join('')}
                         </div>
@@ -1718,7 +1566,6 @@
             editingQuestionIndex = null;
             document.getElementById('modal-question-title').innerText = 'Thêm Câu hỏi mới';
             document.getElementById('btn-save-question').innerText = 'Lưu câu hỏi';
-
             document.getElementById('input-q-text').value = '';
             document.getElementById('input-q-image-url').value = '';
             document.getElementById('input-q-audio-url').value = '';
@@ -1727,7 +1574,6 @@
                 document.getElementById(`input-q-opt${opt}-img`).value = '';
             });
             document.getElementById('input-q-correct').value = 'A';
-
             document.getElementById('question-modal').classList.remove('hidden');
             document.getElementById('question-modal').classList.add('flex');
         }
@@ -1735,13 +1581,11 @@
         function editQuestion(idx) {
             const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
             if (!currentQuiz || !currentQuiz.questions[idx]) return;
-
             const q = currentQuiz.questions[idx];
             editingQuestionIndex = idx;
 
             document.getElementById('modal-question-title').innerText = `Sửa Câu hỏi ${idx + 1}`;
             document.getElementById('btn-save-question').innerText = 'Cập nhật câu hỏi';
-
             document.getElementById('input-q-text').value = q.text || '';
             document.getElementById('input-q-image-url').value = q.imageUrl || '';
             document.getElementById('input-q-audio-url').value = q.audioUrl || '';
@@ -1799,10 +1643,7 @@
             const optC = document.getElementById('input-q-optC').value;
             const optD = document.getElementById('input-q-optD').value;
 
-            if (!text || !optA || !optB || !optC || !optD) {
-                alert('Vui lòng điền câu hỏi và 4 đáp án!');
-                return;
-            }
+            if (!text || !optA || !optB || !optC || !optD) return alert('Điền đủ thông tin!');
 
             const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
             if (!currentQuiz) return;
@@ -1860,34 +1701,18 @@
         }
 
         function toggleCamera() {
-            if (isCameraActive) {
-                stopCamera();
-            } else {
-                startCamera();
-            }
+            if (isCameraActive) stopCamera(); else startCamera();
         }
 
         function startCamera() {
-            if (typeof jsQR === 'undefined') {
-                alert('Chưa tải thư viện jsQR. Vui lòng kiểm tra lại kết nối internet.');
-                return;
-            }
+            if (typeof jsQR === 'undefined') return alert('Chưa tải thư viện jsQR.');
 
             const video = document.getElementById('qr-video');
             const placeholder = document.getElementById('camera-placeholder');
             const btn = document.getElementById('btn-toggle-camera');
             const status = document.getElementById('scan-status');
 
-            const constraints = {
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                    focusMode: "continuous"
-                }
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } })
                 .then(stream => {
                     videoStream = stream;
                     video.srcObject = stream;
@@ -1903,15 +1728,9 @@
                     status.className = "text-[10px] font-bold bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full animate-pulse";
 
                     document.getElementById('qr-overlay-canvas').classList.remove('hidden');
-                    const detectedLabel = document.getElementById('scan-detected-label');
-                    detectedLabel.classList.add('hidden');
-                    detectedLabel.innerText = '';
-
                     scanAnimationId = requestAnimationFrame(scanQRCodeFrame);
                 })
-                .catch(err => {
-                    alert("Không thể mở camera: " + err.message);
-                });
+                .catch(err => alert("Không thể mở camera: " + err.message));
         }
 
         function stopCamera() {
@@ -1919,9 +1738,7 @@
                 videoStream.getTracks().forEach(track => track.stop());
                 videoStream = null;
             }
-            if (scanAnimationId) {
-                cancelAnimationFrame(scanAnimationId);
-            }
+            if (scanAnimationId) cancelAnimationFrame(scanAnimationId);
 
             isCameraActive = false;
             document.getElementById('qr-video').classList.add('hidden');
@@ -1931,7 +1748,6 @@
             const overlayCtx = overlayCanvas.getContext('2d');
             overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             overlayCanvas.classList.add('hidden');
-            document.getElementById('scan-detected-label').classList.add('hidden');
 
             const btn = document.getElementById('btn-toggle-camera');
             const status = document.getElementById('scan-status');
@@ -1947,7 +1763,6 @@
             const overlay = document.getElementById('qr-overlay-canvas');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // Giới hạn độ phân giải xử lý để tăng tốc độ quét đa điểm
                 const maxProcessW = 1280;
                 let procW = video.videoWidth;
                 let procH = video.videoHeight;
@@ -1965,18 +1780,11 @@
                 const imageData = ctx.getImageData(0, 0, procW, procH);
                 const detectedList = detectMultipleQRCodes(imageData);
 
-                // Vẽ overlay code đầu tiên
                 drawScanOverlay(video, overlay, detectedList.length > 0 ? detectedList[0].code : null);
-
-                // Xử lý tất cả thẻ phát hiện được (có cooldown)
-                detectedList.forEach(({ code }) => {
-                    processScannedCode(code);
-                });
+                detectedList.forEach(({ code }) => processScannedCode(code));
             }
 
-            if (isCameraActive) {
-                scanAnimationId = requestAnimationFrame(scanQRCodeFrame);
-            }
+            if (isCameraActive) scanAnimationId = requestAnimationFrame(scanQRCodeFrame);
         }
 
         function mapVideoPointToDisplay(pt, video, displayW, displayH) {
@@ -2056,30 +1864,18 @@
                 const cardId = parseInt(data.replace("CARD_", ""), 10);
                 if (isNaN(cardId)) return;
 
-                // Cooldown chống quét trùng lặp liên tục
                 const now = Date.now();
                 const last = scanCooldownMap.get(cardId) || 0;
                 if (now - last < SCAN_COOLDOWN_MS) return;
                 scanCooldownMap.set(cardId, now);
 
                 const detectedOption = getOptionFromCode(code);
-
-                const detectedLabel = document.getElementById('scan-detected-label');
-                if (detectedLabel) {
-                    detectedLabel.classList.remove('hidden');
-                    detectedLabel.innerText = `Thẻ #${cardId} → Đáp án ${detectedOption}`;
-                }
-
                 const qIdx = appData.currentQuestionIndex;
-                if (!appData.responses[qIdx]) {
-                    appData.responses[qIdx] = {};
-                }
+                if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
 
                 if (appData.responses[qIdx][cardId] !== detectedOption) {
                     appData.responses[qIdx][cardId] = detectedOption;
-                    
                     sendScanResultToPC(cardId, detectedOption, qIdx);
-
                     playBeepSound();
                     saveData();
                     renderCardStatusGrid();
@@ -2089,25 +1885,15 @@
 
         function exportResultsCSV() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (!currentClass) {
-                alert("Vui lòng chọn lớp học!");
-                return;
-            }
+            if (!currentClass) return alert("Vui lòng chọn lớp!");
             
             const activeQuizId = currentClass.assignedQuizId || appData.quizzes[0]?.id;
             const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
-            
-            if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
-                alert("Bài Test chưa có câu hỏi nào để xuất báo cáo!");
-                return;
-            }
+            if (!currentQuiz || !currentQuiz.questions) return alert("Chưa có câu hỏi!");
 
             const totalQuestions = currentQuiz.questions.length;
-
             let headers = ["Mã Thẻ", "Họ và Tên Học Sinh"];
-            for (let i = 0; i < totalQuestions; i++) {
-                headers.push(`Câu ${i + 1} (ĐA: ${currentQuiz.questions[i].correct})`);
-            }
+            for (let i = 0; i < totalQuestions; i++) headers.push(`Câu ${i + 1} (ĐA: ${currentQuiz.questions[i].correct})`);
             headers.push("Tổng Số Câu Đúng", "Tỷ Lệ Đúng (%)");
 
             let csvRows = [headers.map(h => `"${h}"`).join(",")];
@@ -2119,7 +1905,6 @@
                 for (let i = 0; i < totalQuestions; i++) {
                     const q = currentQuiz.questions[i];
                     const userAns = (appData.responses[i] && appData.responses[i][s.cardId]) ? appData.responses[i][s.cardId] : "-";
-                    
                     if (userAns === q.correct) {
                         correctCount++;
                         row.push(`"${userAns} (Đúng)"`);
@@ -2140,7 +1925,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `Bao_Cao_${currentClass.name}_${currentQuiz.title.replace(/\s+/g, '_')}.csv`);
+            link.setAttribute("download", `BaoCao_${currentClass.name}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2149,14 +1934,9 @@
         function handleFileImport(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const fileName = file.name.toLowerCase();
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-
-            if (!currentClass) {
-                alert("Vui lòng chọn hoặc tạo lớp học trước khi nhập!");
-                return;
-            }
+            if (!currentClass) return alert("Vui lòng chọn lớp học!");
 
             if (fileName.endsWith('.docx')) {
                 const reader = new FileReader();
@@ -2174,7 +1954,6 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                    
                     const names = rows.map(r => r[0] ? r[0].toString().trim() : '').filter(n => n.length > 0);
                     appendImportedStudents(names, currentClass);
                 };
@@ -2184,17 +1963,16 @@
 
         function appendImportedStudents(names, currentClass) {
             let startCardId = currentClass.students.length > 0 ? Math.max(...currentClass.students.map(s => s.cardId)) + 1 : 1;
-            names.forEach(name => {
-                currentClass.students.push({ cardId: startCardId++, name: name });
-            });
+            names.forEach(name => currentClass.students.push({ cardId: startCardId++, name: name }));
             saveData();
             renderStudents();
             renderClasses();
-            alert(`Đã thêm thành công ${names.length} học sinh vào ${currentClass.name}!`);
+            alert(`Đã thêm ${names.length} học sinh!`);
         }
 
         function renderClasses() {
             const list = document.getElementById('class-list');
+            if (!list) return;
             list.innerHTML = '';
 
             if (appData.classes.length === 0) {
@@ -2205,39 +1983,28 @@
 
             appData.classes.forEach(c => {
                 const isActive = c.id === appData.selectedClassId;
-                const scheduleText = (c.scheduleDate || c.scheduleTime) 
-                    ? `<div class="text-[10px] text-amber-400 font-bold mt-0.5"><i class="fa-solid fa-clock mr-1"></i>${c.scheduleDate || ''} ${c.scheduleTime || ''}</div>` 
-                    : '';
-
                 list.innerHTML += `
-                    <div onclick="selectClass('${c.id}')" class="p-3 rounded-xl cursor-pointer flex justify-between items-center transition text-xs ${isActive ? 'bg-amber-400 text-slate-950 font-black shadow-lg' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'}">
-                        <div>
-                            <span>${c.name}</span>
-                            ${scheduleText}
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-[10px] bg-slate-900 text-amber-300 px-2 py-0.5 rounded-full font-bold">${c.students.length} HS</span>
-                            <button onclick="event.stopPropagation(); deleteClass('${c.id}')" title="Xóa lớp học" class="btn-3d text-rose-400 hover:text-rose-300 text-xs p-1">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                    <div class="p-3 rounded-xl border flex flex-col justify-between transition-all ${isActive ? 'bg-indigo-950/80 border-indigo-500 shadow-lg' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}">
+                        <div class="flex items-center justify-between">
+                            <div class="cursor-pointer flex-1" onclick="selectClass('${c.id}')">
+                                <h4 class="font-bold text-sm ${isActive ? 'text-amber-400' : 'text-slate-200'}">${c.name}</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5"><i class="fa-solid fa-user-group mr-1"></i>${c.students ? c.students.length : 0} Học sinh ${c.scheduleDate ? `| <i class="fa-solid fa-calendar-days text-indigo-400 ml-1"></i> ${c.scheduleDate}` : ''}</p>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="renameClass('${c.id}')" title="Đổi tên lớp" class="text-slate-400 hover:text-amber-400 p-1.5 rounded-lg text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteClass('${c.id}')" title="Xóa lớp" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
-            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (currentClass) {
-                document.getElementById('class-schedule-date').value = currentClass.scheduleDate || '';
-                document.getElementById('class-schedule-time').value = currentClass.scheduleTime || '';
-            }
-
-            renderQuizDropdowns();
             renderStudents();
+            renderQuizDropdowns();
         }
 
-        function selectClass(id) {
-            appData.selectedClassId = id;
-            appData.responses = {};
+        function selectClass(classId) {
+            appData.selectedClassId = classId;
             saveData();
             renderClasses();
         }
@@ -2260,69 +2027,111 @@
             }
         }
 
-        function deleteClass(id) {
-            const cls = appData.classes.find(c => c.id === id);
-            if (!cls) return;
-
-            const confirmMsg = cls.students.length > 0
-                ? `Xóa lớp "${cls.name}" cùng toàn bộ ${cls.students.length} học sinh?`
-                : `Xóa lớp "${cls.name}"?`;
-
-            if (!confirm(confirmMsg)) return;
-
-            appData.classes = appData.classes.filter(c => c.id !== id);
-
-            if (appData.selectedClassId === id) {
-                appData.selectedClassId = appData.classes.length > 0 ? appData.classes[0].id : null;
+        function renameClass(classId) {
+            const targetClass = appData.classes.find(c => c.id === classId);
+            if (!targetClass) return;
+            const newName = prompt('Nhập tên mới cho lớp học:', targetClass.name);
+            if (newName && newName.trim()) {
+                targetClass.name = newName.trim();
+                saveData();
+                renderClasses();
             }
+        }
 
-            saveData();
-            renderClasses();
+        function deleteClass(classId) {
+            if (appData.classes.length <= 1) {
+                alert('Hệ thống cần giữ ít nhất 1 lớp học!');
+                return;
+            }
+            const targetClass = appData.classes.find(c => c.id === classId);
+            if (confirm(`Bạn có chắc chắn muốn xóa lớp "${targetClass.name}"?`)) {
+                appData.classes = appData.classes.filter(c => c.id !== classId);
+                appData.selectedClassId = appData.classes[0].id;
+                saveData();
+                renderClasses();
+            }
         }
 
         function renderStudents() {
+            const tableBody = document.getElementById('student-table-body');
+            const title = document.getElementById('current-class-title');
+            const dateInput = document.getElementById('class-schedule-date');
+            const timeInput = document.getElementById('class-schedule-time');
+
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const tbody = document.getElementById('student-table-body');
-            document.getElementById('current-class-title').innerText = currentClass ? currentClass.name : 'Chưa chọn lớp';
             
-            tbody.innerHTML = '';
-            if (!currentClass || currentClass.students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500 text-xs">Chưa có học sinh nào trong lớp.</td></tr>`;
+            if (!currentClass) {
+                if (title) title.innerText = 'Chi tiết Lớp';
+                if (tableBody) tableBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">Chưa chọn lớp học nào.</td></tr>';
+                if (dateInput) dateInput.value = '';
+                if (timeInput) timeInput.value = '';
                 return;
             }
 
-            currentClass.students.forEach((s, idx) => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/50">
-                        <td class="p-3 font-black text-amber-400">Thẻ #${s.cardId}</td>
-                        <td class="p-3 font-bold text-slate-200">${s.name}</td>
-                        <td class="p-3 text-right">
-                            <button onclick="deleteStudent(${idx})" class="btn-3d text-rose-400 hover:text-rose-300 text-xs p-1.5"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
+            if (title) title.innerText = `Danh Sách Học Sinh: ${currentClass.name}`;
+            if (dateInput) dateInput.value = currentClass.scheduleDate || '';
+            if (timeInput) timeInput.value = currentClass.scheduleTime || '';
+
+            if (!currentClass.students || currentClass.students.length === 0) {
+                if (tableBody) tableBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">Chưa có học sinh trong lớp. Thêm thủ công hoặc nhập từ Word / Excel.</td></tr>';
+                return;
+            }
+
+            if (tableBody) {
+                tableBody.innerHTML = '';
+                currentClass.students.forEach((s) => {
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-900 transition border-b border-slate-800/50">
+                            <td class="p-3 font-mono text-amber-400 font-bold">Thẻ #${s.cardId}</td>
+                            <td class="p-3 font-medium text-slate-200">${s.name}</td>
+                            <td class="p-3 text-right space-x-2">
+                                <button onclick="editStudent(${s.cardId})" class="text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteStudent(${s.cardId})" class="text-rose-400 hover:text-rose-300 font-bold"><i class="fa-solid fa-user-minus"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
         function addStudent() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!currentClass) return;
 
-            const name = prompt('Nhập tên học sinh:');
+            const name = prompt('Nhập Tên Học Sinh:');
             if (name && name.trim()) {
                 const nextCardId = currentClass.students.length > 0 ? Math.max(...currentClass.students.map(s => s.cardId)) + 1 : 1;
-                currentClass.students.push({ cardId: nextCardId, name: name.trim() });
+                currentClass.students.push({
+                    cardId: nextCardId,
+                    name: name.trim()
+                });
                 saveData();
                 renderStudents();
                 renderClasses();
             }
         }
 
-        function deleteStudent(index) {
+        function editStudent(cardId) {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!currentClass) return;
-            if (confirm('Xóa học sinh này?')) {
-                currentClass.students.splice(index, 1);
+
+            const student = currentClass.students.find(s => s.cardId === cardId);
+            if (!student) return;
+
+            const newName = prompt('Sửa Họ và Tên Học Sinh:', student.name);
+            if (newName && newName.trim()) {
+                student.name = newName.trim();
+                saveData();
+                renderStudents();
+            }
+        }
+
+        function deleteStudent(cardId) {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            if (!currentClass) return;
+
+            if (confirm(`Xóa học sinh mang Thẻ #${cardId}?`)) {
+                currentClass.students = currentClass.students.filter(s => s.cardId !== cardId);
                 saveData();
                 renderStudents();
                 renderClasses();
@@ -2330,35 +2139,27 @@
         }
 
         function renderPresentation() {
-            // Bảo vệ dữ liệu tối thiểu
-            if (!appData.quizzes || appData.quizzes.length === 0) {
-                document.getElementById('live-question-number').innerText = `Câu 0 / 0`;
-                document.getElementById('live-question-text').innerText = 'Chưa có bài test nào. Vui lòng soạn câu hỏi trước.';
-                document.getElementById('live-options-grid').innerHTML = '';
-                return;
-            }
-            if (!appData.classes || appData.classes.length === 0) {
-                // Vẫn hiển thị quiz mặc định dù chưa có lớp
-            }
-            let currentClass = (appData.classes || []).find(c => c.id === appData.selectedClassId);
-            if (!currentClass && appData.classes && appData.classes.length > 0) {
-                currentClass = appData.classes[0];
-                appData.selectedClassId = currentClass.id;
-            }
-            const activeQuizId = (currentClass && currentClass.assignedQuizId) || appData.selectedQuizId || appData.quizzes[0]?.id;
-            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId) || appData.quizzes[0];
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            const activeQuizId = currentClass?.assignedQuizId || appData.selectedQuizId || appData.quizzes[0]?.id;
+            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
 
             const titleEl = document.getElementById('live-quiz-title');
+            const qNumEl = document.getElementById('live-question-number');
+            const qTextEl = document.getElementById('live-question-text');
+            const optionsGrid = document.getElementById('live-options-grid');
+            const imgContainer = document.getElementById('live-image-container');
+            const imgEl = document.getElementById('live-image');
+            const audioContainer = document.getElementById('live-audio-container');
+            const audioPlayer = document.getElementById('live-audio-player');
+
             if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>${currentQuiz ? currentQuiz.title : 'Chưa chọn bài test'}`;
 
             if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
-                document.getElementById('live-question-number').innerText = `Câu 0 / 0`;
-                document.getElementById('live-question-text').innerText = 'Bài test này chưa có câu hỏi nào. Vui lòng soạn câu hỏi trước.';
-                document.getElementById('live-options-grid').innerHTML = '';
-                const imgC = document.getElementById('live-image-container');
-                const audC = document.getElementById('live-audio-container');
-                if (imgC) imgC.classList.add('hidden');
-                if (audC) audC.classList.add('hidden');
+                if (qNumEl) qNumEl.innerText = 'Câu 0 / 0';
+                if (qTextEl) qTextEl.innerText = 'Bài test chưa có câu hỏi nào. Vui lòng chuyển sang Tab "Soạn Bài Test" để thêm câu hỏi!';
+                if (optionsGrid) optionsGrid.innerHTML = '';
+                if (imgContainer) imgContainer.classList.add('hidden');
+                if (audioContainer) audioContainer.classList.add('hidden');
                 renderCardStatusGrid();
                 return;
             }
@@ -2368,93 +2169,126 @@
             }
 
             const q = currentQuiz.questions[appData.currentQuestionIndex];
-            document.getElementById('live-question-number').innerText = `Câu ${appData.currentQuestionIndex + 1} / ${currentQuiz.questions.length}`;
-            document.getElementById('live-question-text').innerText = q.text;
+            if (!q) return;
 
-            const imgContainer = document.getElementById('live-image-container');
+            if (qNumEl) qNumEl.innerText = `Câu ${appData.currentQuestionIndex + 1} / ${currentQuiz.questions.length}`;
+            if (qTextEl) qTextEl.innerText = q.text;
+
             if (q.imageUrl) {
-                document.getElementById('live-image').src = q.imageUrl;
+                imgEl.src = q.imageUrl;
                 imgContainer.classList.remove('hidden');
             } else {
                 imgContainer.classList.add('hidden');
             }
 
-            const audioContainer = document.getElementById('live-audio-container');
             if (q.audioUrl) {
-                document.getElementById('live-audio-player').src = q.audioUrl;
+                audioPlayer.src = q.audioUrl;
                 audioContainer.classList.remove('hidden');
             } else {
                 audioContainer.classList.add('hidden');
             }
 
-            const optionsGrid = document.getElementById('live-options-grid');
-            optionsGrid.innerHTML = '';
+            if (optionsGrid) {
+                optionsGrid.innerHTML = '';
+                ['A', 'B', 'C', 'D'].forEach(optKey => {
+                    const isCorrect = appData.showAnswer && q.correct === optKey;
+                    const optText = q.options ? q.options[optKey] : '';
+                    const optImg = q.optionImages ? q.optionImages[optKey] : '';
 
-            ['A', 'B', 'C', 'D'].forEach(opt => {
-                const isCorrect = appData.showAnswer && q.correct === opt;
-                const optImg = q.optionImages ? q.optionImages[opt] : '';
+                    let borderBgClass = "bg-slate-950/90 border-slate-800 text-slate-100";
+                    if (isCorrect) {
+                        borderBgClass = "bg-emerald-950 border-emerald-400 text-emerald-100 ring-4 ring-emerald-500/50";
+                    }
 
-                optionsGrid.innerHTML += `
-                    <div class="answer-option-card p-3 lg:p-4 rounded-2xl border-2 text-left font-black flex flex-col justify-between transition h-full overflow-hidden ${isCorrect ? 'border-emerald-400 bg-emerald-950/90 text-emerald-200 ring-4 ring-emerald-500/50' : 'border-slate-800 bg-slate-950 text-slate-100 hover:border-amber-400'}">
-                        <div class="flex items-center my-auto min-h-0">
-                            <span class="answer-badge w-14 h-14 lg:w-16 lg:h-16 rounded-2xl ${isCorrect ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-amber-400'} flex items-center justify-center font-black mr-3 shrink-0 shadow-xl border border-slate-700">${opt}</span>
-                            <span class="answer-text leading-snug font-black">${q.options[opt]}</span>
+                    optionsGrid.innerHTML += `
+                        <div class="answer-option-card border-2 rounded-2xl p-3 flex items-center justify-between ${borderBgClass} transition-all">
+                            <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                <span class="answer-badge font-black text-amber-400 bg-slate-900 border border-slate-700 px-3 py-1 rounded-xl flex-none">${optKey}</span>
+                                <div class="min-w-0 flex-1">
+                                    <span class="answer-text font-bold leading-tight block">${optText}</span>
+                                    ${optImg ? `<img src="${optImg}" class="max-h-16 mt-1 rounded-lg border border-slate-700 object-contain">` : ''}
+                                </div>
+                            </div>
+                            ${isCorrect ? `<i class="fa-solid fa-circle-check text-emerald-400 text-3xl ml-2 flex-none animate-bounce"></i>` : ''}
                         </div>
-                        ${optImg ? `<img src="${optImg}" class="max-h-12 lg:max-h-16 object-contain rounded-xl mt-1 border border-slate-700 shadow-xl">` : ''}
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
 
             renderCardStatusGrid();
         }
 
         function toggleAnswerVisibility() {
             appData.showAnswer = !appData.showAnswer;
-            renderPresentation();
-        }
-
-        function nextQuestion() {
-            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const activeQuizId = currentClass?.assignedQuizId || appData.quizzes[0]?.id;
-            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
-
-            if (currentQuiz && appData.currentQuestionIndex < currentQuiz.questions.length - 1) {
-                appData.currentQuestionIndex++;
-                appData.showAnswer = false;
-                renderPresentation();
-                broadcastStateSync();
+            const btn = document.getElementById('btn-show-answer');
+            if (appData.showAnswer) {
+                btn.className = "btn-3d text-xs bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-xl";
+                btn.innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i>Ẩn đáp án đúng`;
+            } else {
+                btn.className = "btn-3d text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl";
+                btn.innerHTML = `<i class="fa-solid fa-eye mr-1"></i>Hiện đáp án đúng`;
             }
+            renderPresentation();
         }
 
         function prevQuestion() {
             if (appData.currentQuestionIndex > 0) {
                 appData.currentQuestionIndex--;
                 appData.showAnswer = false;
+                resetAnswerVisibilityButton();
+                saveData();
                 renderPresentation();
                 broadcastStateSync();
             }
         }
 
-        function renderCardStatusGrid() {
+        function nextQuestion() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const container = document.getElementById('card-status-grid');
-            if (!container) return;
-            container.innerHTML = '';
+            const activeQuizId = currentClass?.assignedQuizId || appData.selectedQuizId || appData.quizzes[0]?.id;
+            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
 
-            if (!currentClass) return;
+            if (currentQuiz && appData.currentQuestionIndex < currentQuiz.questions.length - 1) {
+                appData.currentQuestionIndex++;
+                appData.showAnswer = false;
+                resetAnswerVisibilityButton();
+                saveData();
+                renderPresentation();
+                broadcastStateSync();
+            }
+        }
+
+        function resetAnswerVisibilityButton() {
+            const btn = document.getElementById('btn-show-answer');
+            if (btn) {
+                btn.className = "btn-3d text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl";
+                btn.innerHTML = `<i class="fa-solid fa-eye mr-1"></i>Hiện đáp án đúng`;
+            }
+        }
+
+        function renderCardStatusGrid() {
+            const grid = document.getElementById('card-status-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+
+            if (!currentClass || !currentClass.students || currentClass.students.length === 0) {
+                grid.innerHTML = `<div class="col-span-4 p-4 text-center text-slate-500 text-xs">Chưa có danh sách học sinh trong lớp.</div>`;
+                return;
+            }
 
             const qIdx = appData.currentQuestionIndex;
             const currentResponses = appData.responses[qIdx] || {};
 
             currentClass.students.forEach(s => {
                 const scannedOption = currentResponses[s.cardId];
-                const hasScanned = !!scannedOption;
+                const isScanned = !!scannedOption;
 
-                container.innerHTML += `
-                    <div class="btn-3d flex flex-col items-center justify-center p-1.5 rounded-xl text-center font-black transition ${hasScanned ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}" title="${s.name} (${hasScanned ? 'Đã quét - Đáp án ' + scannedOption : 'Chưa quét'})">
-                        <span class="text-[11px]">#${s.cardId}${hasScanned ? ' ✓' : ''}</span>
-                        <span class="text-[9px] font-bold truncate w-full mt-0.5">${s.name.split(' ').pop()}</span>
-                        ${hasScanned ? `<span class="text-[9px] font-black mt-0.5">Đáp án: ${scannedOption}</span>` : ''}
+                grid.innerHTML += `
+                    <div class="p-1.5 rounded-xl border flex flex-col items-center justify-between text-center transition-all ${isScanned ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-md' : 'bg-slate-950 border-slate-800 text-slate-400'}">
+                        <span class="text-[10px] font-mono font-bold">#${s.cardId}</span>
+                        <span class="text-[11px] font-bold truncate w-full text-slate-200" title="${s.name}">${s.name.split(' ').pop()}</span>
+                        ${isScanned ? `<span class="mt-1 px-1.5 py-0.5 rounded-md bg-emerald-400 text-slate-950 font-black text-xs">${scannedOption}</span>` : `<span class="mt-1 text-[10px] text-slate-600">--</span>`}
                     </div>
                 `;
             });
@@ -2462,19 +2296,27 @@
 
         function simulateScan() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (!currentClass) return;
+            if (!currentClass || !currentClass.students || currentClass.students.length === 0) {
+                alert('Vui lòng thêm học sinh vào lớp trước khi giả lập!');
+                return;
+            }
+
+            const randomStudent = currentClass.students[Math.floor(Math.random() * currentClass.students.length)];
+            const options = ['A', 'B', 'C', 'D'];
+            const randomOption = options[Math.floor(Math.random() * options.length)];
 
             const qIdx = appData.currentQuestionIndex;
             if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
+            appData.responses[qIdx][randomStudent.cardId] = randomOption;
 
-            const opts = ['A', 'B', 'C', 'D'];
-            currentClass.students.forEach(s => {
-                appData.responses[qIdx][s.cardId] = opts[Math.floor(Math.random() * opts.length)];
-            });
+            sendScanResultToPC(randomStudent.cardId, randomOption, qIdx);
+
+            playBeepSound();
             saveData();
             renderCardStatusGrid();
         }
 
+        // ==================== KHỞI TẠO VÀ IN 50 THẺ QR (A4) ====================
         function openPrintModal() {
             document.getElementById('print-modal').classList.remove('hidden');
             document.getElementById('print-modal').classList.add('flex');
@@ -2485,124 +2327,74 @@
             document.getElementById('print-modal').classList.remove('flex');
         }
 
-        async function triggerPrintProcess() {
-            if (typeof QRCode === 'undefined') {
-                alert('Không tải được thư viện tạo mã QR (QRCode). Vui lòng kiểm tra kết nối Internet.');
-                return;
-            }
-
-            document.getElementById('print-loading').classList.remove('hidden');
-            document.getElementById('btn-start-print').classList.add('hidden');
-
-            const printContainer = document.getElementById('cards-container');
-            printContainer.innerHTML = '';
-
-            try {
-                for (let i = 1; i <= 50; i += 2) {
-                    const img1 = await generateCardDataURL(i);
-                    const img2 = await generateCardDataURL(i + 1);
-
-                    printContainer.innerHTML += `
-                        <div class="page-break">
-                            <img src="${img1}" class="w-[195mm] h-[135mm] object-contain border border-slate-300">
-                            <img src="${img2}" class="w-[195mm] h-[135mm] object-contain border border-slate-300">
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                console.error('Lỗi khi tạo thẻ QR:', err);
-                alert('Đã xảy ra lỗi khi tạo thẻ mã hóa.');
-                document.getElementById('print-loading').classList.add('hidden');
-                document.getElementById('btn-start-print').classList.remove('hidden');
-                return;
-            }
-
-            document.getElementById('print-loading').classList.add('hidden');
-            document.getElementById('btn-start-print').classList.remove('hidden');
-            closePrintModal();
+        function triggerPrintProcess() {
+            const loading = document.getElementById('print-loading');
+            const btn = document.getElementById('btn-start-print');
+            loading.classList.remove('hidden');
+            btn.disabled = true;
 
             setTimeout(() => {
+                generatePrintableCards();
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                closePrintModal();
                 window.print();
             }, 300);
         }
 
-        function generateCardDataURL(cardNum) {
-            return new Promise((resolve, reject) => {
-                const tempDiv = document.getElementById('qr-temp-holder');
-                tempDiv.innerHTML = '';
+        function generatePrintableCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
 
-                try {
-                    new QRCode(tempDiv, {
-                        text: `CARD_${cardNum}`,
-                        width: 380,
-                        height: 380,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                } catch (err) {
-                    reject(err);
-                    return;
-                }
+            const tempHolder = document.getElementById('qr-temp-holder');
 
-                let attempts = 0;
-                const maxAttempts = 20;
-                const waitForCanvas = () => {
-                    const qrCanvas = tempDiv.querySelector('canvas');
-                    if (qrCanvas || attempts >= maxAttempts) {
-                        drawFinalCard(qrCanvas);
-                        return;
-                    }
-                    attempts++;
-                    setTimeout(waitForCanvas, 50);
-                };
+            for (let page = 0; page < 25; page++) {
+                const card1Id = page * 2 + 1;
+                const card2Id = page * 2 + 2;
 
-                const drawFinalCard = (qrCanvas) => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 720;
-                    canvas.height = 520;
-                    const ctx = canvas.getContext('2d');
+                tempHolder.innerHTML = '';
+                new QRCode(tempHolder, { text: `CARD_${card1Id}`, width: 350, height: 350, correctLevel: QRCode.CorrectLevel.H });
+                const qrImg1 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
 
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                tempHolder.innerHTML = '';
+                new QRCode(tempHolder, { text: `CARD_${card2Id}`, width: 350, height: 350, correctLevel: QRCode.CorrectLevel.H });
+                const qrImg2 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
 
-                    ctx.lineWidth = 14;
-                    ctx.strokeStyle = "#000000";
-                    ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+                container.innerHTML += `
+                    <div class="page-break flex flex-col justify-around items-center h-screen p-4 bg-white">
+                        ${renderSingleCardHTML(card1Id, qrImg1)}
+                        <hr class="w-full border-t-2 border-dashed border-gray-400 my-2">
+                        ${renderSingleCardHTML(card2Id, qrImg2)}
+                    </div>
+                `;
+            }
+        }
 
-                    if (qrCanvas) {
-                        ctx.drawImage(qrCanvas, (canvas.width - 380) / 2, (canvas.height - 380) / 2, 380, 380);
-                    }
+        function renderSingleCardHTML(cardId, qrImgData) {
+            return `
+                <div class="w-[190mm] h-[130mm] border-4 border-black rounded-3xl p-4 flex flex-col justify-between items-center bg-white text-black font-sans relative shadow-none">
+                    <div class="w-full flex justify-between items-center border-b-4 border-black pb-2">
+                        <span class="text-3xl font-black uppercase tracking-wider">THẺ TRẮC NGHIỆM PRO</span>
+                        <span class="text-4xl font-black bg-black text-white px-4 py-1 rounded-2xl">#${cardId}</span>
+                    </div>
 
-                    ctx.font = 'black 48px sans-serif';
-                    ctx.fillStyle = '#000000';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('A', canvas.width / 2, 55);
+                    <div class="relative w-full flex-1 flex items-center justify-center my-2">
+                        <span class="absolute top-0 font-black text-6xl tracking-widest text-black">A</span>
+                        <span class="absolute right-0 font-black text-6xl tracking-widest text-black">B</span>
+                        <span class="absolute bottom-0 font-black text-6xl tracking-widest text-black">C</span>
+                        <span class="absolute left-0 font-black text-6xl tracking-widest text-black">D</span>
 
-                    ctx.save();
-                    ctx.translate(canvas.width - 45, canvas.height / 2);
-                    ctx.rotate(Math.PI / 2);
-                    ctx.fillText('B', 0, 0);
-                    ctx.restore();
+                        <div class="p-3 border-4 border-black rounded-2xl bg-white">
+                            <img src="${qrImgData}" class="w-[65mm] h-[65mm] object-contain">
+                        </div>
+                    </div>
 
-                    ctx.fillText('C', canvas.width / 2, canvas.height - 20);
-
-                    ctx.save();
-                    ctx.translate(45, canvas.height / 2);
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.fillText('D', 0, 0);
-                    ctx.restore();
-
-                    ctx.font = 'bold 22px sans-serif';
-                    ctx.fillStyle = '#000000';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`THẺ HỌC SINH #${cardNum}`, 25, 45);
-
-                    resolve(canvas.toDataURL('image/png'));
-                };
-
-                waitForCanvas();
-            });
+                    <div class="w-full flex justify-between items-center border-t-2 border-gray-400 pt-2 text-xs font-bold text-gray-700">
+                        <span>Xoay hướng chữ cái (A/B/C/D) lên trên để chọn đáp án</span>
+                        <span>Camera Auto-Focus 10M</span>
+                    </div>
+                </div>
+            `;
         }
     </script>
 </body>
