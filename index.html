@@ -10,8 +10,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- THÊM THƯ VIỆN PEERJS ĐỂ ĐỒNG BỘ MÁY TÍNH - ĐIỆN THOẠI QUA INTERNET -->
+    <!-- PEERJS - Đồng bộ Laptop ↔ Điện thoại quét thẻ -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- FIREBASE - Auth + Firestore (tài khoản & dữ liệu đồng bộ mọi thiết bị) -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media print {
@@ -436,16 +440,20 @@
                     <i class="fa-solid fa-user-shield text-2xl text-slate-950"></i>
                 </div>
                 <h3 id="auth-modal-title" class="text-xl font-black text-amber-400">Đăng Nhập Tài Khoản Pro</h3>
-                <p id="auth-modal-subtitle" class="text-[11px] text-slate-400">Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn</p>
+                <p id="auth-modal-subtitle" class="text-[11px] text-slate-400">Đăng nhập bằng Email – đồng bộ dữ liệu trên mọi thiết bị (Laptop + Điện thoại)</p>
             </div>
 
             <div id="auth-error" class="hidden bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-bold px-3 py-2 rounded-xl text-center"></div>
             <div id="auth-success" class="hidden bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold px-3 py-2 rounded-xl text-center"></div>
             
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <div id="auth-displayname-wrap" class="hidden">
+                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-id-card mr-1 text-amber-400"></i>Tên hiển thị (tùy chọn):</label>
+                    <input type="text" id="auth-displayname" maxlength="40" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition" placeholder="vd: Cô Lan - Toán 10">
+                </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-user mr-1 text-amber-400"></i>Tên tài khoản / Email:</label>
-                    <input type="text" id="auth-username" required autocomplete="username" minlength="3" maxlength="40" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition" placeholder="vd: gv_toan_10a1">
+                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-envelope mr-1 text-amber-400"></i>Email:</label>
+                    <input type="email" id="auth-username" required autocomplete="email" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition" placeholder="vd: gv.toan@gmail.com">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-lock mr-1 text-amber-400"></i>Mật khẩu:</label>
@@ -467,7 +475,7 @@
 
             <div class="text-center pt-2 border-t border-slate-800 space-y-2">
                 <button onclick="toggleAuthMode()" id="btn-toggle-auth-mode" class="text-xs text-indigo-400 hover:underline font-bold">Chưa có tài khoản? Đăng ký ngay</button>
-                <p class="text-[10px] text-slate-500 leading-relaxed">Dữ liệu được lưu cục bộ trên trình duyệt của bạn (GitHub Pages). Mỗi tài khoản có bộ dữ liệu riêng.</p>
+                <p class="text-[10px] text-slate-500 leading-relaxed">Dữ liệu được lưu trên cloud Firebase – đăng nhập cùng Email trên Laptop hoặc Điện thoại đều thấy dữ liệu giống nhau.</p>
             </div>
         </div>
     </div>
@@ -685,10 +693,25 @@
                 initRealtimeSync();
                 startPhoneHDCamera();
             } else {
-                loadData();
-                initRealtimeSync();
-                renderClasses();
-                updateAuthUI();
+                try {
+                    loadData();
+                    initRealtimeSync();
+                    renderClasses();
+                    updateAuthUI();
+                    // Hiển thị câu hỏi ngay khi tải trang (tab presentation là mặc định)
+                    renderPresentation();
+                    // Đánh dấu tab presentation đang active
+                    ['classes', 'quizzes', 'presentation'].forEach(t => {
+                        const tabBtn = document.getElementById(`tab-${t}`);
+                        if (tabBtn) {
+                            tabBtn.className = t === 'presentation'
+                                ? "btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950"
+                                : "btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800";
+                        }
+                    });
+                } catch (err) {
+                    console.error('Lỗi khởi tạo:', err);
+                }
             }
         });
 
@@ -1033,64 +1056,135 @@
             document.getElementById('sync-modal').classList.remove('flex');
         }
 
-        // ==================== AUTH CHUYÊN NGHIỆP (LOCAL STORAGE - GITHUB PAGES) ====================
-        function getUsersDB() {
+        // ==================== FIREBASE CONFIG ====================
+        // ★★★ BẠN CẦN THAY CÁC GIÁ TRỊ DƯỚI BẰNG CONFIG TỪ FIREBASE CONSOLE ★★★
+        // Hướng dẫn: https://console.firebase.google.com → Project Settings → Your apps → Web
+        const FIREBASE_CONFIG = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        let firebaseReady = false;
+        let firebaseAuth = null;
+        let firebaseDb = null;
+        let saveDataTimer = null;
+        let isLoadingCloudData = false;
+
+        function initFirebase() {
             try {
-                return JSON.parse(localStorage.getItem('quet_tn_users_db') || '[]');
+                if (typeof firebase === 'undefined') {
+                    console.warn('Firebase SDK chưa tải.');
+                    return false;
+                }
+                if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+                    console.warn('Chưa cấu hình FIREBASE_CONFIG. Auth cloud chưa hoạt động.');
+                    return false;
+                }
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                }
+                firebaseAuth = firebase.auth();
+                firebaseDb = firebase.firestore();
+                firebaseReady = true;
+                return true;
             } catch (e) {
-                return [];
+                console.error('Lỗi khởi tạo Firebase:', e);
+                return false;
             }
         }
 
-        function saveUsersDB(users) {
-            localStorage.setItem('quet_tn_users_db', JSON.stringify(users));
+        // ==================== SAFE LOCAL STORAGE (cache offline) ====================
+        const _memStore = {};
+        function safeGetItem(key) {
+            try {
+                if (typeof localStorage !== 'undefined') return localStorage.getItem(key);
+            } catch (e) {}
+            return _memStore[key] !== undefined ? _memStore[key] : null;
+        }
+        function safeSetItem(key, value) {
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem(key, value);
+                    return true;
+                }
+            } catch (e) {}
+            _memStore[key] = value;
+            return false;
+        }
+        function safeRemoveItem(key) {
+            try {
+                if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+            } catch (e) {}
+            delete _memStore[key];
         }
 
-        // Simple non-reversible hash for password (client-side only)
-        function simpleHash(str) {
-            let h = 0x811c9dc5;
-            for (let i = 0; i < str.length; i++) {
-                h ^= str.charCodeAt(i);
-                h = Math.imul(h, 0x01000193);
-            }
-            return ('00000000' + (h >>> 0).toString(16)).slice(-8) + btoa(str).slice(0, 12);
+        // ==================== AUTH + FIRESTORE (đồng bộ mọi thiết bị) ====================
+        function getDefaultAppData() {
+            return {
+                classes: [{
+                    id: 'class_1',
+                    name: 'Lớp 10A1',
+                    assignedQuizId: 'quiz_1',
+                    scheduleDate: '',
+                    scheduleTime: '',
+                    students: [
+                        { cardId: 1, name: 'Nguyễn Văn A' },
+                        { cardId: 2, name: 'Trần Thị B' },
+                        { cardId: 3, name: 'Lê Hoàng C' },
+                        { cardId: 4, name: 'Phạm Minh D' }
+                    ]
+                }],
+                selectedClassId: 'class_1',
+                quizzes: [{
+                    id: 'quiz_1',
+                    title: 'Bài Test Khởi Động 01',
+                    questions: [{
+                        id: 'q_1',
+                        text: 'Thủ đô của Việt Nam là thành phố nào?',
+                        imageUrl: 'https://images.unsplash.com/photo-1509030450996-93f2e3d84074?w=600&auto=format&fit=crop&q=60',
+                        audioUrl: '',
+                        options: { A: 'Đà Nẵng', B: 'Hà Nội', C: 'TP. Hồ Chí Minh', D: 'Cần Thơ' },
+                        optionImages: { A: '', B: '', C: '', D: '' },
+                        correct: 'B'
+                    }]
+                }],
+                selectedQuizId: 'quiz_1',
+                currentQuestionIndex: 0,
+                responses: {},
+                showAnswer: false
+            };
         }
 
         function loadAuthSession() {
-            const session = localStorage.getItem('quet_tn_session');
-            if (session) {
-                try {
-                    const parsed = JSON.parse(session);
-                    if (parsed && parsed.username && parsed.expires > Date.now()) {
-                        currentUser = parsed.username;
-                    } else {
-                        localStorage.removeItem('quet_tn_session');
+            // Firebase Auth tự khôi phục session qua onAuthStateChanged
+            if (!initFirebase()) return;
+            firebaseAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user.displayName || user.email || user.uid;
+                    updateAuthUI();
+                    await loadDataFromCloud(user.uid);
+                    if (!isPhoneScannerMode) {
+                        renderClasses();
+                        renderPresentation();
                     }
-                } catch (e) {
-                    localStorage.removeItem('quet_tn_session');
+                } else {
+                    currentUser = null;
+                    updateAuthUI();
                 }
-            }
-        }
-
-        function saveAuthSession(username) {
-            const session = {
-                username: username,
-                expires: Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 days
-            };
-            localStorage.setItem('quet_tn_session', JSON.stringify(session));
-        }
-
-        function clearAuthSession() {
-            localStorage.removeItem('quet_tn_session');
-            currentUser = null;
+            });
         }
 
         function updateAuthUI() {
             const display = document.getElementById('user-display');
             const btnMain = document.getElementById('btn-auth-main');
             const btnOut = document.getElementById('btn-signout');
+            if (!display || !btnMain || !btnOut) return;
             if (currentUser) {
-                display.innerText = currentUser;
+                display.innerText = currentUser.length > 22 ? currentUser.slice(0, 20) + '…' : currentUser;
                 btnMain.classList.remove('from-emerald-500', 'to-teal-600');
                 btnMain.classList.add('from-slate-700', 'to-slate-800');
                 btnOut.classList.remove('hidden');
@@ -1107,6 +1201,7 @@
         function showAuthMessage(type, msg) {
             const errEl = document.getElementById('auth-error');
             const okEl = document.getElementById('auth-success');
+            if (!errEl || !okEl) return;
             errEl.classList.add('hidden');
             okEl.classList.add('hidden');
             if (type === 'error') {
@@ -1119,11 +1214,14 @@
         }
 
         function openAuthModal() {
-            if (currentUser) {
-                // Already logged in - show info
-                if (confirm(`Bạn đang đăng nhập với tài khoản "${currentUser}".\nBạn muốn đăng xuất không?`)) {
+            if (currentUser && firebaseAuth && firebaseAuth.currentUser) {
+                if (confirm(`Bạn đang đăng nhập: ${currentUser}\nBạn muốn đăng xuất không?`)) {
                     handleSignOut();
                 }
+                return;
+            }
+            if (!firebaseReady && !initFirebase()) {
+                alert('Chưa cấu hình Firebase.\n\nMở file index.html, tìm FIREBASE_CONFIG và dán config từ Firebase Console.\nXem hướng dẫn chi tiết ở cuối trang / README.');
                 return;
             }
             authIsSignUp = false;
@@ -1131,8 +1229,9 @@
             document.getElementById('auth-error').classList.add('hidden');
             document.getElementById('auth-success').classList.add('hidden');
             document.getElementById('auth-confirm-pwd-wrap').classList.add('hidden');
+            document.getElementById('auth-displayname-wrap').classList.add('hidden');
             document.getElementById('auth-modal-title').innerText = 'Đăng Nhập Tài Khoản Pro';
-            document.getElementById('auth-modal-subtitle').innerText = 'Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn';
+            document.getElementById('auth-modal-subtitle').innerText = 'Đăng nhập bằng Email – đồng bộ dữ liệu trên mọi thiết bị';
             document.getElementById('btn-auth-submit').innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
             document.getElementById('btn-toggle-auth-mode').innerText = 'Chưa có tài khoản? Đăng ký ngay';
             document.getElementById('auth-modal').classList.remove('hidden');
@@ -1150,10 +1249,11 @@
             document.getElementById('auth-error').classList.add('hidden');
             document.getElementById('auth-success').classList.add('hidden');
             document.getElementById('auth-confirm-pwd-wrap').classList.toggle('hidden', !authIsSignUp);
+            document.getElementById('auth-displayname-wrap').classList.toggle('hidden', !authIsSignUp);
             document.getElementById('auth-modal-title').innerText = authIsSignUp ? 'Đăng Ký Tài Khoản Pro' : 'Đăng Nhập Tài Khoản Pro';
             document.getElementById('auth-modal-subtitle').innerText = authIsSignUp
-                ? 'Tạo tài khoản mới – dữ liệu của bạn sẽ được tách riêng'
-                : 'Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn';
+                ? 'Tạo tài khoản mới – dữ liệu đồng bộ trên Laptop & Điện thoại'
+                : 'Đăng nhập bằng Email – đồng bộ dữ liệu trên mọi thiết bị';
             document.getElementById('btn-auth-submit').innerHTML = authIsSignUp
                 ? '<i class="fa-solid fa-user-plus mr-1.5"></i>ĐĂNG KÝ NGAY'
                 : '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
@@ -1174,14 +1274,35 @@
             }
         }
 
-        function handleAuthSubmit(e) {
+        function firebaseErrorMessage(code) {
+            const map = {
+                'auth/email-already-in-use': 'Email này đã được đăng ký. Hãy đăng nhập.',
+                'auth/invalid-email': 'Email không hợp lệ.',
+                'auth/weak-password': 'Mật khẩu quá yếu (tối thiểu 6 ký tự).',
+                'auth/user-not-found': 'Không tìm thấy tài khoản với email này.',
+                'auth/wrong-password': 'Mật khẩu không đúng.',
+                'auth/invalid-credential': 'Email hoặc mật khẩu không đúng.',
+                'auth/too-many-requests': 'Thử quá nhiều lần. Vui lòng đợi vài phút.',
+                'auth/network-request-failed': 'Lỗi mạng. Kiểm tra kết nối Internet.',
+                'auth/operation-not-allowed': 'Email/Password chưa được bật trong Firebase Console.'
+            };
+            return map[code] || ('Lỗi: ' + (code || 'không xác định'));
+        }
+
+        async function handleAuthSubmit(e) {
             e.preventDefault();
-            const username = document.getElementById('auth-username').value.trim().toLowerCase();
+            if (!firebaseReady && !initFirebase()) {
+                showAuthMessage('error', 'Chưa cấu hình Firebase. Xem hướng dẫn setup.');
+                return;
+            }
+
+            const email = document.getElementById('auth-username').value.trim().toLowerCase();
             const password = document.getElementById('auth-password').value;
             const confirmPwd = document.getElementById('auth-password-confirm').value;
+            const displayName = (document.getElementById('auth-displayname').value || '').trim();
 
-            if (username.length < 3) {
-                showAuthMessage('error', 'Tên tài khoản phải có ít nhất 3 ký tự.');
+            if (!email || !email.includes('@')) {
+                showAuthMessage('error', 'Vui lòng nhập email hợp lệ.');
                 return;
             }
             if (password.length < 6) {
@@ -1189,91 +1310,68 @@
                 return;
             }
 
-            const users = getUsersDB();
+            const btn = document.getElementById('btn-auth-submit');
+            const oldHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Đang xử lý...';
 
-            if (authIsSignUp) {
-                if (password !== confirmPwd) {
-                    showAuthMessage('error', 'Mật khẩu xác nhận không khớp!');
-                    return;
+            try {
+                if (authIsSignUp) {
+                    if (password !== confirmPwd) {
+                        showAuthMessage('error', 'Mật khẩu xác nhận không khớp!');
+                        return;
+                    }
+                    const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+                    if (displayName) {
+                        await cred.user.updateProfile({ displayName: displayName });
+                    }
+                    // Lưu profile + dữ liệu mặc định lên Firestore
+                    await firebaseDb.collection('users').doc(cred.user.uid).set({
+                        email: email,
+                        displayName: displayName || email.split('@')[0],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        appData: getDefaultAppData()
+                    }, { merge: true });
+
+                    currentUser = displayName || email;
+                    showAuthMessage('success', 'Đăng ký thành công! Đang đồng bộ...');
+                    setTimeout(() => {
+                        closeAuthModal();
+                        updateAuthUI();
+                        renderClasses();
+                        renderPresentation();
+                        alert('Chào mừng bạn!\nTài khoản đã tạo. Dữ liệu sẽ đồng bộ giữa Laptop và Điện thoại khi đăng nhập cùng Email.');
+                    }, 700);
+                } else {
+                    await firebaseAuth.signInWithEmailAndPassword(email, password);
+                    currentUser = firebaseAuth.currentUser.displayName || email;
+                    showAuthMessage('success', 'Đăng nhập thành công!');
+                    setTimeout(() => {
+                        closeAuthModal();
+                        updateAuthUI();
+                    }, 500);
                 }
-                if (users.some(u => u.username === username)) {
-                    showAuthMessage('error', 'Tên tài khoản đã tồn tại. Vui lòng chọn tên khác.');
-                    return;
-                }
-                users.push({
-                    username: username,
-                    passwordHash: simpleHash(password),
-                    createdAt: new Date().toISOString()
-                });
-                saveUsersDB(users);
-                showAuthMessage('success', 'Đăng ký thành công! Đang đăng nhập...');
-                setTimeout(() => {
-                    currentUser = username;
-                    saveAuthSession(username);
-                    loadData();
-                    updateAuthUI();
-                    closeAuthModal();
-                    renderClasses();
-                    alert(`Chào mừng ${username}!\nTài khoản đã được tạo. Dữ liệu của bạn được lưu riêng trên trình duyệt này.`);
-                }, 600);
-            } else {
-                const user = users.find(u => u.username === username);
-                if (!user || user.passwordHash !== simpleHash(password)) {
-                    showAuthMessage('error', 'Tên tài khoản hoặc mật khẩu không đúng.');
-                    return;
-                }
-                currentUser = username;
-                saveAuthSession(username);
-                loadData();
-                updateAuthUI();
-                closeAuthModal();
-                renderClasses();
-                alert(`Xin chào ${username}! Đăng nhập thành công.`);
+            } catch (err) {
+                console.error(err);
+                showAuthMessage('error', firebaseErrorMessage(err.code) || err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = oldHtml;
             }
         }
 
-        function handleSignOut() {
+        async function handleSignOut() {
             if (!currentUser) return;
-            if (confirm(`Đăng xuất khỏi tài khoản "${currentUser}"?\nDữ liệu vẫn được lưu an toàn trên trình duyệt.`)) {
-                clearAuthSession();
-                // Reset to default empty state for guest
-                appData = {
-                    classes: [{
-                        id: 'class_1',
-                        name: 'Lớp 10A1',
-                        assignedQuizId: 'quiz_1',
-                        scheduleDate: '',
-                        scheduleTime: '',
-                        students: [
-                            { cardId: 1, name: 'Nguyễn Văn A' },
-                            { cardId: 2, name: 'Trần Thị B' },
-                            { cardId: 3, name: 'Lê Hoàng C' },
-                            { cardId: 4, name: 'Phạm Minh D' }
-                        ]
-                    }],
-                    selectedClassId: 'class_1',
-                    quizzes: [{
-                        id: 'quiz_1',
-                        title: 'Bài Test Khởi Động 01',
-                        questions: [{
-                            id: 'q_1',
-                            text: 'Thủ đô của Việt Nam là thành phố nào?',
-                            imageUrl: 'https://images.unsplash.com/photo-1509030450996-93f2e3d84074?w=600&auto=format&fit=crop&q=60',
-                            audioUrl: '',
-                            options: { A: 'Đà Nẵng', B: 'Hà Nội', C: 'TP. Hồ Chí Minh', D: 'Cần Thơ' },
-                            optionImages: { A: '', B: '', C: '', D: '' },
-                            correct: 'B'
-                        }]
-                    }],
-                    selectedQuizId: 'quiz_1',
-                    currentQuestionIndex: 0,
-                    responses: {},
-                    showAnswer: false
-                };
-                updateAuthUI();
-                renderClasses();
-                switchTab('presentation');
-            }
+            if (!confirm(`Đăng xuất khỏi "${currentUser}"?\nDữ liệu vẫn được lưu trên cloud.`)) return;
+            try {
+                if (firebaseAuth) await firebaseAuth.signOut();
+            } catch (e) { console.warn(e); }
+            currentUser = null;
+            appData = getDefaultAppData();
+            updateAuthUI();
+            renderClasses();
+            renderPresentation();
+            switchTab('presentation');
         }
 
         function toggleFullscreen() {
@@ -1284,26 +1382,82 @@
             }
         }
 
-        function getDataKey() {
-            return currentUser ? `plickers_pro_169_data_${currentUser}` : 'plickers_pro_169_data_guest';
-        }
-
-        function loadData() {
-            const saved = localStorage.getItem(getDataKey());
-            if (saved) {
-                try {
-                    appData = JSON.parse(saved);
-                    if (!appData.responses || Array.isArray(appData.responses)) {
-                        appData.responses = {};
-                    }
-                } catch (e) {
-                    console.error("Lỗi parse dữ liệu cũ, dùng mặc định", e);
+        // ---- Load / Save dữ liệu (Cloud + local cache) ----
+        async function loadDataFromCloud(uid) {
+            if (!firebaseDb || !uid) return;
+            isLoadingCloudData = true;
+            try {
+                const doc = await firebaseDb.collection('users').doc(uid).get();
+                if (doc.exists && doc.data().appData) {
+                    const cloud = doc.data().appData;
+                    appData = cloud;
+                    if (!appData.responses || Array.isArray(appData.responses)) appData.responses = {};
+                    if (!Array.isArray(appData.classes)) appData.classes = [];
+                    if (!Array.isArray(appData.quizzes)) appData.quizzes = [];
+                    if (typeof appData.currentQuestionIndex !== 'number') appData.currentQuestionIndex = 0;
+                    // Cache local
+                    safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
+                } else {
+                    // Lần đầu: đẩy dữ liệu mặc định lên cloud
+                    appData = getDefaultAppData();
+                    await firebaseDb.collection('users').doc(uid).set({
+                        appData: appData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
                 }
+            } catch (e) {
+                console.warn('Load cloud thất bại, thử cache local:', e);
+                const cached = safeGetItem('plickers_cloud_cache_' + uid);
+                if (cached) {
+                    try { appData = JSON.parse(cached); } catch (_) {}
+                }
+            } finally {
+                isLoadingCloudData = false;
             }
         }
 
+        function loadData() {
+            // Khi chưa login: dùng guest local
+            if (!firebaseAuth || !firebaseAuth.currentUser) {
+                try {
+                    const saved = safeGetItem('plickers_pro_169_data_guest');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed && typeof parsed === 'object') {
+                            appData = parsed;
+                            if (!appData.responses || Array.isArray(appData.responses)) appData.responses = {};
+                        }
+                    }
+                } catch (e) {}
+                return;
+            }
+            // Đã login: onAuthStateChanged sẽ gọi loadDataFromCloud
+        }
+
         function saveData() {
-            localStorage.setItem(getDataKey(), JSON.stringify(appData));
+            // Luôn cache local
+            try {
+                const key = (firebaseAuth && firebaseAuth.currentUser)
+                    ? 'plickers_cloud_cache_' + firebaseAuth.currentUser.uid
+                    : 'plickers_pro_169_data_guest';
+                safeSetItem(key, JSON.stringify(appData));
+            } catch (e) {}
+
+            // Debounce ghi lên Firestore (tránh spam khi quét liên tục)
+            if (!firebaseAuth || !firebaseAuth.currentUser || !firebaseDb || isLoadingCloudData) return;
+            clearTimeout(saveDataTimer);
+            saveDataTimer = setTimeout(async () => {
+                try {
+                    const uid = firebaseAuth.currentUser.uid;
+                    // Không lưu base64 ảnh/audio quá lớn lên free tier nếu muốn tối ưu
+                    await firebaseDb.collection('users').doc(uid).set({
+                        appData: appData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } catch (e) {
+                    console.warn('Lưu cloud thất bại:', e);
+                }
+            }, 800);
         }
 
         function switchTab(tab) {
@@ -2176,18 +2330,35 @@
         }
 
         function renderPresentation() {
-            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const activeQuizId = currentClass?.assignedQuizId || appData.quizzes[0]?.id;
-            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
+            // Bảo vệ dữ liệu tối thiểu
+            if (!appData.quizzes || appData.quizzes.length === 0) {
+                document.getElementById('live-question-number').innerText = `Câu 0 / 0`;
+                document.getElementById('live-question-text').innerText = 'Chưa có bài test nào. Vui lòng soạn câu hỏi trước.';
+                document.getElementById('live-options-grid').innerHTML = '';
+                return;
+            }
+            if (!appData.classes || appData.classes.length === 0) {
+                // Vẫn hiển thị quiz mặc định dù chưa có lớp
+            }
+            let currentClass = (appData.classes || []).find(c => c.id === appData.selectedClassId);
+            if (!currentClass && appData.classes && appData.classes.length > 0) {
+                currentClass = appData.classes[0];
+                appData.selectedClassId = currentClass.id;
+            }
+            const activeQuizId = (currentClass && currentClass.assignedQuizId) || appData.selectedQuizId || appData.quizzes[0]?.id;
+            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId) || appData.quizzes[0];
 
-            document.getElementById('live-quiz-title').innerHTML = `<i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>${currentQuiz ? currentQuiz.title : 'Chưa chọn bài test'}`;
+            const titleEl = document.getElementById('live-quiz-title');
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>${currentQuiz ? currentQuiz.title : 'Chưa chọn bài test'}`;
 
-            if (!currentQuiz || currentQuiz.questions.length === 0) {
+            if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
                 document.getElementById('live-question-number').innerText = `Câu 0 / 0`;
                 document.getElementById('live-question-text').innerText = 'Bài test này chưa có câu hỏi nào. Vui lòng soạn câu hỏi trước.';
                 document.getElementById('live-options-grid').innerHTML = '';
-                document.getElementById('live-image-container').classList.add('hidden');
-                document.getElementById('live-audio-container').classList.add('hidden');
+                const imgC = document.getElementById('live-image-container');
+                const audC = document.getElementById('live-audio-container');
+                if (imgC) imgC.classList.add('hidden');
+                if (audC) audC.classList.add('hidden');
                 renderCardStatusGrid();
                 return;
             }
