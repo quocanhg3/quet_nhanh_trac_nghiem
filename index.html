@@ -644,6 +644,12 @@
         let videoStream = null;
         let scanAnimationId = null;
 
+        // Chỉ dùng ở CHẾ ĐỘ ĐIỆN THOẠI: lưu số thứ tự câu hỏi hiện tại
+        // được đồng bộ (nhận) từ máy tính, để khi gửi kết quả quét về
+        // Laptop thì ghi đúng vào câu đang trình chiếu, thay vì luôn
+        // ghi vào câu đầu tiên (mặc định) trên điện thoại.
+        let phoneCurrentQuestionIndex = 0;
+
         // TÍCH HỢP ĐỒNG BỘ REALTIME INTERNET / WEBRTC PEERJS
         function initRealtimeSync() {
             // 1. BroadcastChannel dùng cục bộ giữa các tab
@@ -652,6 +658,8 @@
                 syncChannel.onmessage = function(e) {
                     if (e.data && e.data.type === 'SCAN_RESULT') {
                         handleIncomingScanResult(e.data);
+                    } else if (e.data && e.data.type === 'STATE_SYNC' && typeof e.data.currentQuestionIndex === 'number') {
+                        phoneCurrentQuestionIndex = e.data.currentQuestionIndex;
                     }
                 };
             } catch(err) { console.log('Local BroadcastChannel Error:', err); }
@@ -670,6 +678,14 @@
                         peerConn.on('open', function() {
                             document.getElementById('phone-conn-status').innerText = '✓ Đã kết nối Laptop';
                             document.getElementById('phone-conn-status').className = 'text-[10px] font-bold bg-emerald-400 text-slate-950 px-2 py-1 rounded-full';
+                        });
+
+                        // NHẬN ĐỒNG BỘ TRẠNG THÁI (câu hỏi hiện tại...) TỪ MÁY TÍNH
+                        // để điện thoại luôn biết đang quét cho đúng câu nào.
+                        peerConn.on('data', function(data) {
+                            if (data && data.type === 'STATE_SYNC' && typeof data.currentQuestionIndex === 'number') {
+                                phoneCurrentQuestionIndex = data.currentQuestionIndex;
+                            }
                         });
 
                         peerConn.on('close', function() {
@@ -692,6 +708,12 @@
                             if (data && data.type === 'SCAN_RESULT') {
                                 handleIncomingScanResult(data);
                             }
+                        });
+
+                        conn.on('open', function() {
+                            // Gửi ngay câu hỏi đang trình chiếu cho điện thoại
+                            // vừa kết nối, để điện thoại quét đúng câu ngay từ đầu.
+                            broadcastStateSync();
                         });
 
                         conn.on('close', function() {
@@ -746,6 +768,25 @@
             }
 
             // Gửi qua WebRTC PeerJS tới Laptop xa
+            if (peerConn && peerConn.open) {
+                peerConn.send(payload);
+            }
+        }
+
+        // GỬI ĐỒNG BỘ TRẠNG THÁI HIỆN TẠI (câu hỏi đang trình chiếu) TỚI ĐIỆN THOẠI ĐANG QUÉT
+        // Nếu không có bước này, điện thoại sẽ không biết Laptop đang ở câu nào và
+        // sẽ luôn ghi kết quả quét vào câu mặc định (câu đầu tiên) => sai đáp án
+        // và bảng "Trạng Thái Quét" không bao giờ hiện xanh cho câu đang chiếu.
+        function broadcastStateSync() {
+            const payload = {
+                type: 'STATE_SYNC',
+                currentQuestionIndex: appData.currentQuestionIndex
+            };
+
+            if (syncChannel) {
+                try { syncChannel.postMessage(payload); } catch(e){}
+            }
+
             if (peerConn && peerConn.open) {
                 peerConn.send(payload);
             }
@@ -1766,6 +1807,7 @@
                 appData.currentQuestionIndex++;
                 appData.showAnswer = false;
                 renderPresentation();
+                broadcastStateSync();
             }
         }
 
@@ -1774,6 +1816,7 @@
                 appData.currentQuestionIndex--;
                 appData.showAnswer = false;
                 renderPresentation();
+                broadcastStateSync();
             }
         }
 
@@ -1789,12 +1832,14 @@
             const currentResponses = appData.responses[qIdx] || {};
 
             currentClass.students.forEach(s => {
-                const hasScanned = !!currentResponses[s.cardId];
+                const scannedOption = currentResponses[s.cardId];
+                const hasScanned = !!scannedOption;
 
                 container.innerHTML += `
-                    <div class="btn-3d flex flex-col items-center justify-center p-1.5 rounded-xl text-center font-black transition ${hasScanned ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}" title="${s.name} (${hasScanned ? 'Đã quét' : 'Chưa quét'})">
-                        <span class="text-[11px]">#${s.cardId}</span>
-                        <span class="text-[9px] font-bold truncate w-full mt-0.5">${hasScanned ? '✓ Đã quét' : s.name.split(' ').pop()}</span>
+                    <div class="btn-3d flex flex-col items-center justify-center p-1.5 rounded-xl text-center font-black transition ${hasScanned ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}" title="${s.name} (${hasScanned ? 'Đã quét - Đáp án ' + scannedOption : 'Chưa quét'})">
+                        <span class="text-[11px]">#${s.cardId}${hasScanned ? ' ✓' : ''}</span>
+                        <span class="text-[9px] font-bold truncate w-full mt-0.5">${s.name.split(' ').pop()}</span>
+                        ${hasScanned ? `<span class="text-[9px] font-black mt-0.5">Đáp án: ${scannedOption}</span>` : ''}
                     </div>
                 `;
             });
@@ -1967,7 +2012,7 @@
                             const cardId = parseInt(code.data.replace("CARD_", ""));
                             const opt = getOptionFromCode(code);
                             
-                            sendScanResultToPC(cardId, opt, appData.currentQuestionIndex);
+                            sendScanResultToPC(cardId, opt, phoneCurrentQuestionIndex);
 
                             // Hiệu ứng thông báo ngắn trên điện thoại
                             const alertBox = document.getElementById('phone-scan-alert');
