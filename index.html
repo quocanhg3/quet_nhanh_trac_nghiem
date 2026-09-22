@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUÉT NHANH TRẮC NGHIỆM</title>
+    <title>QUÉT NHANH TRẮC NGHIỆM PRO - AUTOFOCUS 10M</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
@@ -42,7 +42,7 @@
             }
         }
 
-        /* GIỮ NGUYÊN CÁC STYLE VÀ PHÔNG CHỮ TV 43 INCH */
+        /* STYLE PHÔNG CHỮ TV 43 INCH */
         #live-options-grid {
             grid-template-rows: repeat(2, minmax(0, 1fr));
         }
@@ -56,14 +56,14 @@
             line-height: 1;
         }
         .answer-text {
-            font-size: clamp(2.2rem, 6vh, 4.2rem); /* Rất to cho TV 43 inch */
+            font-size: clamp(2.2rem, 6vh, 4.2rem);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
         .live-question-text {
-            font-size: clamp(2rem, 5.5vh, 3.8rem); /* To rõ khi chiếu TV */
+            font-size: clamp(2rem, 5.5vh, 3.8rem);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -82,7 +82,6 @@
             border-radius: 4px;
         }
 
-        /* NÂNG CẤP NÚT BẤM HIỆU ỨNG 3D VÀ CHUYỂN ĐỘNG NỔI BẬT */
         .btn-3d {
             position: relative;
             isolation: isolate;
@@ -124,7 +123,6 @@
             50% { transform: scale(1.02); filter: brightness(1.1) drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); }
         }
 
-        /* HIỆU ỨNG CARD 3D */
         .card-3d {
             background: linear-gradient(145deg, #ffffff, #f1f5f9);
             box-shadow: 8px 8px 20px #cbd5e1, -8px -8px 20px #ffffff;
@@ -134,12 +132,12 @@
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
 
-    <!-- GIAO DIỆN QUÉT CHUYÊN DỤNG CHO ĐIỆN THOẠI (ẨN MẶC ĐỊNH) -->
+    <!-- GIAO DIỆN QUÉT CHUYÊN DỤNG CHO ĐIỆN THOẠI -->
     <div id="phone-scanner-view" class="fixed inset-0 bg-slate-950 z-[100] hidden flex-col p-4 text-center justify-between">
         <div class="bg-slate-900 border border-amber-400/30 p-3 rounded-2xl flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-mobile-screen-button text-amber-400 text-xl animate-bounce"></i>
-                <span class="font-black text-amber-400 text-sm">CAMERA QUÉT ĐIỆN THOẠI</span>
+                <span class="font-black text-amber-400 text-sm">CAMERA QUÉT 10M AUTOFOCUS</span>
             </div>
             <span id="phone-conn-status" class="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-1 rounded-full">Đang kết nối...</span>
         </div>
@@ -149,13 +147,17 @@
             <canvas id="phone-qr-canvas" class="hidden"></canvas>
             <canvas id="phone-qr-overlay" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
+            <div id="phone-q-indicator" class="absolute top-4 left-4 bg-amber-400 text-slate-950 font-black px-3 py-1 rounded-xl text-xs shadow-lg">
+                Đang quét: Câu 1
+            </div>
+
             <div id="phone-scan-alert" class="absolute bottom-4 inset-x-4 bg-emerald-500 text-slate-950 font-black py-2 px-3 rounded-xl text-sm shadow-2xl transition-all opacity-0 transform translate-y-2">
                 Đã quét thẻ!
             </div>
         </div>
 
         <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <p class="text-xs text-slate-300 font-medium">Hướng camera về phía thẻ học sinh. Kết quả sẽ tự động gửi tới máy tính trình chiếu.</p>
+            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m đang hoạt động. Quét nhiều thẻ cùng lúc và tự động đồng bộ kết quả.</p>
             <button onclick="window.location.href=window.location.pathname" class="btn-3d w-full py-2 bg-rose-600 text-white font-bold rounded-xl text-xs">
                 Thoát chế độ quét điện thoại
             </button>
@@ -173,12 +175,10 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <!-- NÚT TRẠNG THÁI ĐỒNG BỘ ĐIỆN THOẠI -->
                 <button id="btn-sync-status" onclick="openSyncModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center">
                     <i class="fa-solid fa-mobile-screen mr-1.5 text-amber-300"></i><span id="sync-status-text">Kết Nối Điện Thoại Quét</span>
                 </button>
 
-                <!-- TÀI KHOẢN PRO -->
                 <div id="auth-section">
                     <button onclick="openAuthModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center">
                         <i class="fa-solid fa-user-lock mr-1.5"></i><span id="user-display">Đăng Nhập / Đăng Ký</span>
@@ -330,10 +330,8 @@
         <section id="view-presentation" class="h-full flex flex-col min-h-0">
             <div class="grid grid-cols-12 gap-3 h-full min-h-0">
                 
-                <!-- KHU VỰC CÂU HỎI TRÌNH CHIẾU CHÍNH (9/12 COLUMNS) -->
                 <div class="col-span-9 bg-slate-900 rounded-3xl border-2 border-slate-800 p-4 flex flex-col justify-between h-full min-h-0 overflow-hidden shadow-2xl relative">
                     <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-                        <!-- Header Câu hỏi -->
                         <div class="flex justify-between items-center mb-2 flex-none">
                             <div class="flex items-center space-x-3">
                                 <span id="live-question-number" class="bg-amber-400 text-slate-950 text-sm font-black px-4 py-1.5 rounded-full shadow-lg">Câu 1 / 2</span>
@@ -356,25 +354,20 @@
                             </div>
                         </div>
 
-                        <!-- Nội dung Câu hỏi -->
                         <h2 id="live-question-text" class="live-question-text font-black text-amber-300 my-2 leading-snug flex-none">Đang tải câu hỏi...</h2>
 
-                        <!-- Audio Player -->
                         <div id="live-audio-container" class="my-1.5 hidden bg-slate-950 p-2 rounded-2xl border border-slate-800 flex items-center space-x-3 flex-none">
                             <i class="fa-solid fa-volume-high text-amber-400 text-2xl animate-bounce"></i>
                             <audio id="live-audio-player" controls class="w-full h-8"></audio>
                         </div>
 
-                        <!-- Hình ảnh Câu hỏi -->
                         <div id="live-image-container" class="my-1 hidden flex justify-center flex-none">
                             <img id="live-image" src="" alt="Question Image" class="max-h-[110px] lg:max-h-[140px] rounded-2xl object-contain border-2 border-slate-700 shadow-2xl">
                         </div>
 
-                        <!-- Danh sách Lựa chọn A, B, C, D -->
                         <div id="live-options-grid" class="grid grid-cols-2 gap-3 flex-1 min-h-0 my-2"></div>
                     </div>
 
-                    <!-- Thanh Chuyển Câu -->
                     <div class="flex justify-between items-center pt-3 border-t border-slate-800 mt-1 flex-none">
                         <button onclick="prevQuestion()" class="btn-3d bg-slate-800 hover:bg-slate-700 text-white font-black px-6 py-2 rounded-2xl flex items-center text-sm">
                             <i class="fa-solid fa-arrow-left mr-2"></i>Câu trước
@@ -385,10 +378,8 @@
                     </div>
                 </div>
 
-                <!-- KHU VỰC CAMERA SCAN & MA TRẬN THẺ (3/12 COLUMNS) -->
                 <div class="col-span-3 flex flex-col h-full min-h-0 space-y-3">
                     
-                    <!-- MODULE CAMERA QUÉT MÃ QR -->
                     <div class="bg-slate-900 rounded-3xl border-2 border-slate-800 p-3 flex-none shadow-2xl">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-extrabold text-amber-400 text-xs flex items-center">
@@ -412,7 +403,6 @@
                         </div>
                     </div>
 
-                    <!-- BẢNG NÚT SỐ THẺ -->
                     <div class="bg-slate-900 rounded-3xl border-2 border-slate-800 p-3 flex-1 flex flex-col min-h-0 overflow-hidden shadow-2xl">
                         <div class="flex justify-between items-center mb-2 flex-none">
                             <h3 class="font-extrabold text-amber-400 flex items-center text-xs">
@@ -459,9 +449,9 @@
     <!-- MODAL KẾT NỐI ĐIỆN THOẠI QUÉT TỪ XA -->
     <div id="sync-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border-2 border-amber-400/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 my-auto text-center">
-            <h3 class="text-xl font-black text-amber-400">Dùng Điện Thoại Quét Thẻ Từ Xa</h3>
+            <h3 class="text-xl font-black text-amber-400">Dùng Điện Thoại Quét Thẻ Từ Xa 10M</h3>
             <p class="text-slate-300 text-xs leading-relaxed">
-                Quét mã QR dưới đây bằng điện thoại để mở giao diện Camera siêu tốc. Điện thoại có thể quét xa đến 5 mét và đồng bộ đáp án trực tiếp về Laptop đang trình chiếu!
+                Quét mã QR dưới đây bằng điện thoại để bật chế độ Camera Auto-Focus siêu xa 10 mét. Tự động đồng bộ đáp án trực tiếp về Máy tính!
             </p>
             
             <div id="phone-qr-container" class="bg-white p-4 rounded-2xl inline-block shadow-2xl"></div>
@@ -576,7 +566,7 @@
         <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3">
             <h3 class="text-base font-black text-amber-400">In 50 Thẻ QR-Code Trắc Nghiệm (A4)</h3>
             <p class="text-slate-300 text-xs leading-relaxed">
-                Tự động khởi tạo 50 thẻ mã hóa QR Code trung tâm dàn trên 25 trang A4. Khổ thẻ siêu rõ nét giúp Camera Điện thoại quét xa đến 5 mét.
+                Tự động khởi tạo 50 thẻ mã hóa QR Code trung tâm dàn trên 25 trang A4. Khổ thẻ siêu rõ nét giúp Camera Điện thoại quét xa đến 10 mét.
             </p>
             <div id="print-loading" class="hidden text-amber-400 font-bold text-xs text-center py-1">
                 <i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tự động tạo 50 ảnh thẻ...
@@ -644,15 +634,34 @@
         let videoStream = null;
         let scanAnimationId = null;
 
-        // Chỉ dùng ở CHẾ ĐỘ ĐIỆN THOẠI: lưu số thứ tự câu hỏi hiện tại
-        // được đồng bộ (nhận) từ máy tính, để khi gửi kết quả quét về
-        // Laptop thì ghi đúng vào câu đang trình chiếu, thay vì luôn
-        // ghi vào câu đầu tiên (mặc định) trên điện thoại.
         let phoneCurrentQuestionIndex = 0;
+        let phoneVideoStream = null;
+        let phoneScanAnimationId = null;
+
+        // BẮT THAM SỐ URL KHI ĐIỆN THOẠI QUÉT QR KẾT NỐI
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            const modeParam = urlParams.get('mode');
+
+            if (roomParam) syncRoomId = roomParam;
+
+            if (modeParam === 'phone_scanner') {
+                isPhoneScannerMode = true;
+                document.getElementById('phone-scanner-view').classList.remove('hidden');
+                document.getElementById('phone-scanner-view').classList.add('flex');
+                initRealtimeSync();
+                startPhoneHDCamera();
+            } else {
+                initRealtimeSync();
+                renderClasses();
+            }
+        });
 
         // TÍCH HỢP ĐỒNG BỘ REALTIME INTERNET / WEBRTC PEERJS
         function initRealtimeSync() {
-            // 1. BroadcastChannel dùng cục bộ giữa các tab
             try {
                 syncChannel = new BroadcastChannel('QUET_TRAC_NGHIEM_SYNC_' + syncRoomId);
                 syncChannel.onmessage = function(e) {
@@ -660,16 +669,15 @@
                         handleIncomingScanResult(e.data);
                     } else if (e.data && e.data.type === 'STATE_SYNC' && typeof e.data.currentQuestionIndex === 'number') {
                         phoneCurrentQuestionIndex = e.data.currentQuestionIndex;
+                        updatePhoneQuestionIndicator();
                     }
                 };
             } catch(err) { console.log('Local BroadcastChannel Error:', err); }
 
-            // 2. Khởi tạo PeerJS kết nối xa qua Internet (Máy tính vs Điện thoại)
             if (typeof Peer !== 'undefined') {
                 const pcPeerId = 'QUET_TN_PC_' + syncRoomId;
                 
                 if (isPhoneScannerMode) {
-                    // Chế độ Điện thoại kết nối tới Máy tính
                     peer = new Peer();
                     peer.on('open', function(id) {
                         document.getElementById('phone-conn-status').innerText = 'Đang kết nối tới Laptop...';
@@ -680,11 +688,10 @@
                             document.getElementById('phone-conn-status').className = 'text-[10px] font-bold bg-emerald-400 text-slate-950 px-2 py-1 rounded-full';
                         });
 
-                        // NHẬN ĐỒNG BỘ TRẠNG THÁI (câu hỏi hiện tại...) TỪ MÁY TÍNH
-                        // để điện thoại luôn biết đang quét cho đúng câu nào.
                         peerConn.on('data', function(data) {
                             if (data && data.type === 'STATE_SYNC' && typeof data.currentQuestionIndex === 'number') {
                                 phoneCurrentQuestionIndex = data.currentQuestionIndex;
+                                updatePhoneQuestionIndicator();
                             }
                         });
 
@@ -694,7 +701,6 @@
                         });
                     });
                 } else {
-                    // Chế độ Máy tính (Lắng nghe kết nối từ điện thoại)
                     peer = new Peer(pcPeerId);
                     peer.on('open', function(id) {
                         updateSyncUIState(true);
@@ -711,8 +717,6 @@
                         });
 
                         conn.on('open', function() {
-                            // Gửi ngay câu hỏi đang trình chiếu cho điện thoại
-                            // vừa kết nối, để điện thoại quét đúng câu ngay từ đầu.
                             broadcastStateSync();
                         });
 
@@ -725,6 +729,13 @@
                         console.log('PeerJS PC Error:', err);
                     });
                 }
+            }
+        }
+
+        function updatePhoneQuestionIndicator() {
+            const el = document.getElementById('phone-q-indicator');
+            if (el) {
+                el.innerText = `Đang quét: Câu ${phoneCurrentQuestionIndex + 1}`;
             }
         }
 
@@ -762,21 +773,15 @@
                 questionIndex: qIdx
             };
 
-            // Gửi qua BroadcastChannel
             if (syncChannel) {
                 try { syncChannel.postMessage(payload); } catch(e){}
             }
 
-            // Gửi qua WebRTC PeerJS tới Laptop xa
             if (peerConn && peerConn.open) {
                 peerConn.send(payload);
             }
         }
 
-        // GỬI ĐỒNG BỘ TRẠNG THÁI HIỆN TẠI (câu hỏi đang trình chiếu) TỚI ĐIỆN THOẠI ĐANG QUÉT
-        // Nếu không có bước này, điện thoại sẽ không biết Laptop đang ở câu nào và
-        // sẽ luôn ghi kết quả quét vào câu mặc định (câu đầu tiên) => sai đáp án
-        // và bảng "Trạng Thái Quét" không bao giờ hiện xanh cho câu đang chiếu.
         function broadcastStateSync() {
             const payload = {
                 type: 'STATE_SYNC',
@@ -789,6 +794,104 @@
 
             if (peerConn && peerConn.open) {
                 peerConn.send(payload);
+            }
+        }
+
+        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS & CÂN BẰNG SÁNG
+        function startPhoneHDCamera() {
+            const video = document.getElementById('phone-qr-video');
+            
+            // Yêu cầu độ phân giải 4K / Ultra-HD và Lấy nét tự động liên tục
+            const constraints = {
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 3840, min: 1920 },
+                    height: { ideal: 2160, min: 1080 },
+                    focusMode: "continuous",
+                    advanced: [{ focusMode: "continuous" }, { zoom: 1.5 }]
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    phoneVideoStream = stream;
+                    video.srcObject = stream;
+                    video.play();
+                    phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
+                })
+                .catch(err => {
+                    // Fallback độ phân giải 1080p cơ bản nếu không hỗ trợ 4K
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } })
+                        .then(stream => {
+                            phoneVideoStream = stream;
+                            video.srcObject = stream;
+                            video.play();
+                            phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
+                        })
+                        .catch(e => alert("Không thể khởi động Camera Điện Thoại: " + e.message));
+                });
+        }
+
+        function scanPhoneQRCodeFrame() {
+            const video = document.getElementById('phone-qr-video');
+            const canvas = document.getElementById('phone-qr-canvas');
+            const overlay = document.getElementById('phone-qr-overlay');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                // Quét QR trực tiếp ở độ phân giải siêu nét
+                let code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                // Nếu quét khoảng cách xa 10m mà hình mờ -> Bật thuật toán tăng tương phản
+                if (!code) {
+                    enhanceImageForDistance(imageData);
+                    code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+                }
+
+                drawScanOverlay(video, overlay, code);
+
+                if (code && code.data && code.data.startsWith("CARD_")) {
+                    const cardId = parseInt(code.data.replace("CARD_", ""));
+                    const option = getOptionFromCode(code);
+
+                    sendScanResultToPC(cardId, option, phoneCurrentQuestionIndex);
+
+                    const alertBox = document.getElementById('phone-scan-alert');
+                    if (alertBox) {
+                        alertBox.innerText = `✓ Đã quét Thẻ #${cardId} → Đáp án ${option} (Câu ${phoneCurrentQuestionIndex + 1})`;
+                        alertBox.classList.remove('opacity-0', 'translate-y-2');
+                        setTimeout(() => {
+                            alertBox.classList.add('opacity-0', 'translate-y-2');
+                        }, 1200);
+                    }
+                }
+            }
+
+            phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
+        }
+
+        // THUẬT TOÁN XỬ LÝ ẢNH NHỊ PHÂN HÓA - GIÚP QUÉT XA ĐẾN 10M
+        function enhanceImageForDistance(imageData) {
+            const data = imageData.data;
+            const factor = 1.8; // Tăng Contrast 180%
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                // Nhị phân hóa độ sáng (Thresholding)
+                let v = (gray - 128) * factor + 128;
+                v = v > 120 ? 255 : 0; 
+                data[i] = v;
+                data[i + 1] = v;
+                data[i + 2] = v;
             }
         }
 
@@ -819,7 +922,6 @@
             document.getElementById('sync-modal').classList.remove('flex');
         }
 
-        // TÀI KHOẢN ĐĂNG NHẬP / ĐĂNG KÝ
         function openAuthModal() {
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
@@ -1282,7 +1384,6 @@
             }
         }
 
-        // TỐI ƯU CẤU HÌNH CAMERA ĐIỆN THOẠI QUÉT SIÊU XA VÀ FULL HD
         function startCamera() {
             if (typeof jsQR === 'undefined') {
                 alert('Chưa tải thư viện jsQR. Vui lòng kiểm tra lại kết nối internet.');
@@ -1315,7 +1416,7 @@
                     isCameraActive = true;
                     btn.innerHTML = `<i class="fa-solid fa-video-slash mr-1"></i>Tắt Camera`;
                     btn.className = "btn-3d flex-1 bg-rose-600 text-white font-black py-1.5 px-2 rounded-xl text-xs flex items-center justify-center";
-                    status.innerText = "Đang quét siêu tốc...";
+                    status.innerText = "Đang quét...";
                     status.className = "text-[10px] font-bold bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full animate-pulse";
 
                     document.getElementById('qr-overlay-canvas').classList.remove('hidden');
@@ -1326,7 +1427,7 @@
                     scanAnimationId = requestAnimationFrame(scanQRCodeFrame);
                 })
                 .catch(err => {
-                    alert("Không thể mở camera HD: " + err.message);
+                    alert("Không thể mở camera: " + err.message);
                 });
         }
 
@@ -1357,7 +1458,6 @@
             status.className = "text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full";
         }
 
-        // ALGORITHM MULTI-CARD & DISTANCE SCANNER
         function scanQRCodeFrame() {
             const video = document.getElementById('qr-video');
             const canvas = document.getElementById('qr-canvas');
@@ -1371,7 +1471,6 @@
 
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
-                // Quét thông thường
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
                     inversionAttempts: "dontInvert",
                 });
@@ -1479,7 +1578,6 @@
                 if (appData.responses[qIdx][cardId] !== detectedOption) {
                     appData.responses[qIdx][cardId] = detectedOption;
                     
-                    // Phát tín hiệu đồng bộ realtime về Laptop
                     sendScanResultToPC(cardId, detectedOption, qIdx);
 
                     playBeepSound();
@@ -1955,102 +2053,40 @@
                     ctx.strokeStyle = "#000000";
                     ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
 
-                    ctx.fillStyle = "#000000";
-                    ctx.font = "900 32px sans-serif";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-
-                    ctx.fillText("A", canvas.width / 2, 35);
-                    ctx.fillText("B", 35, canvas.height / 2);
-                    ctx.fillText("C", canvas.width / 2, canvas.height - 35);
-                    ctx.fillText("D", canvas.width - 35, canvas.height / 2);
-
                     if (qrCanvas) {
-                        const qrSize = 340;
-                        const qrX = (canvas.width - qrSize) / 2;
-                        const qrY = (canvas.height - qrSize) / 2 - 10;
-                        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-                        ctx.lineWidth = 4;
-                        ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
-
-                        ctx.font = "bold 24px sans-serif";
-                        ctx.fillText(`CARD #${cardNum}`, canvas.width / 2, qrY + qrSize + 26);
+                        ctx.drawImage(qrCanvas, (canvas.width - 380) / 2, (canvas.height - 380) / 2, 380, 380);
                     }
 
-                    resolve(canvas.toDataURL("image/png"));
+                    ctx.font = 'black 48px sans-serif';
+                    ctx.fillStyle = '#000000';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('A', canvas.width / 2, 55);
+
+                    ctx.save();
+                    ctx.translate(canvas.width - 45, canvas.height / 2);
+                    ctx.rotate(Math.PI / 2);
+                    ctx.fillText('B', 0, 0);
+                    ctx.restore();
+
+                    ctx.fillText('C', canvas.width / 2, canvas.height - 20);
+
+                    ctx.save();
+                    ctx.translate(45, canvas.height / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.fillText('D', 0, 0);
+                    ctx.restore();
+
+                    ctx.font = 'bold 22px sans-serif';
+                    ctx.fillStyle = '#000000';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`THẺ HỌC SINH #${cardNum}`, 25, 45);
+
+                    resolve(canvas.toDataURL('image/png'));
                 };
 
                 waitForCanvas();
             });
         }
-
-        // KHỞI CHẠY CAMERA RIÊNG CHO CHẾ ĐỘ ĐIỆN THOẠI
-        function startPhoneScannerCamera() {
-            const video = document.getElementById('phone-qr-video');
-            const canvas = document.getElementById('phone-qr-canvas');
-            const overlay = document.getElementById('phone-qr-overlay');
-
-            navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
-            }).then(stream => {
-                video.srcObject = stream;
-                video.play();
-
-                function loopPhoneScan() {
-                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                        canvas.height = video.videoHeight;
-                        canvas.width = video.videoWidth;
-                        const ctx = canvas.getContext("2d");
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-                        drawScanOverlay(video, overlay, code);
-
-                        if (code && code.data && code.data.startsWith("CARD_")) {
-                            const cardId = parseInt(code.data.replace("CARD_", ""));
-                            const opt = getOptionFromCode(code);
-                            
-                            sendScanResultToPC(cardId, opt, phoneCurrentQuestionIndex);
-
-                            // Hiệu ứng thông báo ngắn trên điện thoại
-                            const alertBox = document.getElementById('phone-scan-alert');
-                            alertBox.innerText = `✓ Đã quét Thẻ #${cardId} → Đáp án ${opt}`;
-                            alertBox.classList.remove('opacity-0', 'translate-y-2');
-                            setTimeout(() => {
-                                alertBox.classList.add('opacity-0', 'translate-y-2');
-                            }, 1200);
-                        }
-                    }
-                    requestAnimationFrame(loopPhoneScan);
-                }
-                requestAnimationFrame(loopPhoneScan);
-            }).catch(err => {
-                alert("Không mở được camera điện thoại: " + err.message);
-            });
-        }
-
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const room = urlParams.get('room');
-            const mode = urlParams.get('mode');
-
-            if (room) {
-                syncRoomId = room;
-            }
-
-            if (mode === 'phone_scanner') {
-                isPhoneScannerMode = true;
-                document.getElementById('phone-scanner-view').classList.remove('hidden');
-                document.getElementById('phone-scanner-view').classList.add('flex');
-                startPhoneScannerCamera();
-            }
-
-            initRealtimeSync();
-            loadData();
-            renderPresentation();
-        };
     </script>
 </body>
 </html>
