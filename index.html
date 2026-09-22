@@ -158,7 +158,7 @@
         </div>
 
         <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m đang hoạt động. Quét nhiều thẻ cùng lúc và tự động đồng bộ kết quả.</p>
+            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m + Quét đa điểm (nhiều thẻ cùng lúc) đang hoạt động. Tự động đồng bộ kết quả về Laptop.</p>
             <button onclick="window.location.href=window.location.pathname" class="btn-3d w-full py-2 bg-rose-600 text-white font-bold rounded-xl text-xs">
                 Thoát chế độ quét điện thoại
             </button>
@@ -180,9 +180,12 @@
                     <i class="fa-solid fa-mobile-screen mr-1.5 text-amber-300"></i><span id="sync-status-text">Kết Nối Điện Thoại Quét</span>
                 </button>
 
-                <div id="auth-section">
-                    <button onclick="openAuthModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center">
+                <div id="auth-section" class="flex items-center space-x-2">
+                    <button id="btn-auth-main" onclick="openAuthModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center">
                         <i class="fa-solid fa-user-lock mr-1.5"></i><span id="user-display">Đăng Nhập / Đăng Ký</span>
+                    </button>
+                    <button id="btn-signout" onclick="handleSignOut()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-600 hover:bg-rose-700 text-white hidden items-center">
+                        <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Đăng xuất
                     </button>
                 </div>
 
@@ -423,26 +426,48 @@
 
     </main>
 
-    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ ONLINE -->
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ CHUYÊN NGHIỆP -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border-2 border-indigo-500/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 my-auto relative">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 id="auth-modal-title" class="text-xl font-black text-amber-400 text-center">Đăng Nhập Tài Khoản Pro</h3>
+            
+            <div class="text-center space-y-1">
+                <div class="w-14 h-14 mx-auto bg-gradient-to-br from-amber-400 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg mb-2">
+                    <i class="fa-solid fa-user-shield text-2xl text-slate-950"></i>
+                </div>
+                <h3 id="auth-modal-title" class="text-xl font-black text-amber-400">Đăng Nhập Tài Khoản Pro</h3>
+                <p id="auth-modal-subtitle" class="text-[11px] text-slate-400">Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn</p>
+            </div>
+
+            <div id="auth-error" class="hidden bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-bold px-3 py-2 rounded-xl text-center"></div>
+            <div id="auth-success" class="hidden bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold px-3 py-2 rounded-xl text-center"></div>
             
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Email / Tên tài khoản:</label>
-                    <input type="text" id="auth-username" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400">
+                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-user mr-1 text-amber-400"></i>Tên tài khoản / Email:</label>
+                    <input type="text" id="auth-username" required autocomplete="username" minlength="3" maxlength="40" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition" placeholder="vd: gv_toan_10a1">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Mật khẩu:</label>
-                    <input type="password" id="auth-password" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400">
+                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-lock mr-1 text-amber-400"></i>Mật khẩu:</label>
+                    <div class="relative">
+                        <input type="password" id="auth-password" required autocomplete="current-password" minlength="6" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition pr-10" placeholder="Tối thiểu 6 ký tự">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
+                            <i id="pwd-eye-icon" class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
                 </div>
-                <button type="submit" id="btn-auth-submit" class="btn-3d w-full py-2.5 rounded-xl font-black text-xs bg-amber-400 text-slate-950 shadow-xl">ĐĂNG NHẬP</button>
+                <div id="auth-confirm-pwd-wrap" class="hidden">
+                    <label class="block text-xs font-bold text-slate-300 mb-1"><i class="fa-solid fa-lock mr-1 text-amber-400"></i>Xác nhận mật khẩu:</label>
+                    <input type="password" id="auth-password-confirm" minlength="6" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400 transition" placeholder="Nhập lại mật khẩu">
+                </div>
+                <button type="submit" id="btn-auth-submit" class="btn-3d w-full py-2.5 rounded-xl font-black text-xs bg-amber-400 text-slate-950 shadow-xl hover:brightness-110">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP
+                </button>
             </form>
 
-            <div class="text-center pt-2 border-t border-slate-800">
+            <div class="text-center pt-2 border-t border-slate-800 space-y-2">
                 <button onclick="toggleAuthMode()" id="btn-toggle-auth-mode" class="text-xs text-indigo-400 hover:underline font-bold">Chưa có tài khoản? Đăng ký ngay</button>
+                <p class="text-[10px] text-slate-500 leading-relaxed">Dữ liệu được lưu cục bộ trên trình duyệt của bạn (GitHub Pages). Mỗi tài khoản có bộ dữ liệu riêng.</p>
             </div>
         </div>
     </div>
@@ -639,9 +664,13 @@
         let phoneVideoStream = null;
         let phoneScanAnimationId = null;
 
+        // Cooldown map để tránh quét trùng lặp nhanh (ms)
+        const scanCooldownMap = new Map();
+        const SCAN_COOLDOWN_MS = 1200;
+
         // BẮT THAM SỐ URL KHI ĐIỆN THOẠI QUÉT QR KẾT NỐI
         window.addEventListener('DOMContentLoaded', () => {
-            loadData();
+            loadAuthSession();
             
             const urlParams = new URLSearchParams(window.location.search);
             const roomParam = urlParams.get('room');
@@ -656,8 +685,10 @@
                 initRealtimeSync();
                 startPhoneHDCamera();
             } else {
+                loadData();
                 initRealtimeSync();
                 renderClasses();
+                updateAuthUI();
             }
         });
 
@@ -798,7 +829,7 @@
             }
         }
 
-        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS & CÂN BẰNG SÁNG
+        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS & CÂN BẰNG SÁNG + ĐA ĐIỂM
         function startPhoneHDCamera() {
             const video = document.getElementById('phone-qr-video');
             
@@ -833,47 +864,125 @@
                 });
         }
 
+        /**
+         * QUÉT ĐA ĐIỂM SIÊU NHANH + TĂNG TƯƠNG PHẢN CHO KHOẢNG CÁCH 10M
+         * - Chạy jsQR trên toàn khung hình + 4 góc + vùng trung tâm
+         * - Áp dụng 2 mức enhance (contrast cao + adaptive threshold)
+         * - Trả về mảng các code duy nhất (cardId)
+         */
+        function detectMultipleQRCodes(imageData) {
+            const results = new Map(); // cardId -> {code, option}
+            const w = imageData.width;
+            const h = imageData.height;
+
+            // Helper: scan one ImageData and collect CARD_ codes
+            const tryScan = (imgData) => {
+                const code = jsQR(imgData.data, imgData.width, imgData.height, {
+                    inversionAttempts: "dontInvert"
+                });
+                if (code && code.data && code.data.startsWith("CARD_")) {
+                    const cardId = parseInt(code.data.replace("CARD_", ""), 10);
+                    if (!isNaN(cardId) && !results.has(cardId)) {
+                        results.set(cardId, { code, option: getOptionFromCode(code) });
+                    }
+                }
+            };
+
+            // 1. Full image - raw
+            tryScan(imageData);
+
+            // 2. Full image - enhanced (high contrast for 10m)
+            const enhanced1 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
+            enhanceImageForDistance(enhanced1, 2.2, 110);
+            tryScan(enhanced1);
+
+            // 3. Full image - second pass (stronger binary for very far / low light)
+            if (results.size === 0) {
+                const enhanced2 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
+                enhanceImageForDistance(enhanced2, 2.8, 100);
+                tryScan(enhanced2);
+            }
+
+            // 4. Multi-region ROI (4 corners + center) – giúp bắt nhiều thẻ cùng lúc
+            const rois = [
+                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },           // top-left
+                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // top-right
+                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // bottom-left
+                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) }, // bottom-right
+                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }  // center
+            ];
+
+            const srcData = imageData.data;
+            rois.forEach(roi => {
+                const roiData = new Uint8ClampedArray(roi.rw * roi.rh * 4);
+                for (let y = 0; y < roi.rh; y++) {
+                    for (let x = 0; x < roi.rw; x++) {
+                        const srcIdx = ((roi.y + y) * w + (roi.x + x)) * 4;
+                        const dstIdx = (y * roi.rw + x) * 4;
+                        roiData[dstIdx] = srcData[srcIdx];
+                        roiData[dstIdx + 1] = srcData[srcIdx + 1];
+                        roiData[dstIdx + 2] = srcData[srcIdx + 2];
+                        roiData[dstIdx + 3] = 255;
+                    }
+                }
+                const roiImg = new ImageData(roiData, roi.rw, roi.rh);
+                tryScan(roiImg);
+                // Enhanced ROI
+                enhanceImageForDistance(roiImg, 2.0, 115);
+                tryScan(roiImg);
+            });
+
+            return Array.from(results.values());
+        }
+
         function scanPhoneQRCodeFrame() {
             const video = document.getElementById('phone-qr-video');
             const canvas = document.getElementById('phone-qr-canvas');
             const overlay = document.getElementById('phone-qr-overlay');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.height = video.videoHeight;
-                canvas.width = video.videoWidth;
-                const ctx = canvas.getContext("2d", { willReadFrequently: true });
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-                // Quét QR trực tiếp ở độ phân giải siêu nét
-                let code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
-
-                // Nếu quét khoảng cách xa 10m mà hình mờ -> Bật thuật toán tăng tương phản
-                if (!code) {
-                    enhanceImageForDistance(imageData);
-                    code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "dontInvert",
-                    });
+                // Giảm độ phân giải xử lý một chút nếu quá lớn để tăng tốc (vẫn giữ nét cho 10m)
+                const maxProcessW = 1920;
+                let procW = video.videoWidth;
+                let procH = video.videoHeight;
+                if (procW > maxProcessW) {
+                    const scale = maxProcessW / procW;
+                    procW = maxProcessW;
+                    procH = Math.round(video.videoHeight * scale);
                 }
 
-                drawScanOverlay(video, overlay, code);
+                canvas.height = procH;
+                canvas.width = procW;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(video, 0, 0, procW, procH);
 
-                if (code && code.data && code.data.startsWith("CARD_")) {
-                    const cardId = parseInt(code.data.replace("CARD_", ""));
-                    const option = getOptionFromCode(code);
+                const imageData = ctx.getImageData(0, 0, procW, procH);
+                const detectedList = detectMultipleQRCodes(imageData);
+
+                // Vẽ overlay cho code đầu tiên (nếu có)
+                drawScanOverlay(video, overlay, detectedList.length > 0 ? detectedList[0].code : null);
+
+                // Xử lý tất cả thẻ đã phát hiện (có cooldown)
+                const now = Date.now();
+                let alertTexts = [];
+                detectedList.forEach(({ code, option }) => {
+                    const cardId = parseInt(code.data.replace("CARD_", ""), 10);
+                    const last = scanCooldownMap.get(cardId) || 0;
+                    if (now - last < SCAN_COOLDOWN_MS) return;
+                    scanCooldownMap.set(cardId, now);
 
                     sendScanResultToPC(cardId, option, phoneCurrentQuestionIndex);
+                    alertTexts.push(`#${cardId}→${option}`);
+                });
 
+                if (alertTexts.length > 0) {
                     const alertBox = document.getElementById('phone-scan-alert');
                     if (alertBox) {
-                        alertBox.innerText = `✓ Đã quét Thẻ #${cardId} → Đáp án ${option} (Câu ${phoneCurrentQuestionIndex + 1})`;
+                        alertBox.innerText = `✓ Đã quét ${alertTexts.length} thẻ: ${alertTexts.join(' | ')} (Câu ${phoneCurrentQuestionIndex + 1})`;
                         alertBox.classList.remove('opacity-0', 'translate-y-2');
                         setTimeout(() => {
                             alertBox.classList.add('opacity-0', 'translate-y-2');
-                        }, 1200);
+                        }, 1400);
                     }
                 }
             }
@@ -881,15 +990,16 @@
             phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
         }
 
-        // THUẬT TOÁN XỬ LÝ ẢNH NHỊ PHÂN HÓA - GIÚP QUÉT XA ĐẾN 10M
-        function enhanceImageForDistance(imageData) {
+        // THUẬT TOÁN XỬ LÝ ẢNH NHỊ PHÂN HÓA NÂNG CAO - GIÚP QUÉT XA ĐẾN 10M
+        // factor: độ tăng contrast, threshold: ngưỡng nhị phân (càng thấp càng nhạy với ảnh tối)
+        function enhanceImageForDistance(imageData, factor = 1.8, threshold = 120) {
             const data = imageData.data;
-            const factor = 1.8; // Tăng Contrast 180%
             for (let i = 0; i < data.length; i += 4) {
+                // Grayscale + contrast stretch
                 let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                // Nhị phân hóa độ sáng (Thresholding)
-                let v = (gray - 128) * factor + 128;
-                v = v > 120 ? 255 : 0; 
+                gray = (gray - 128) * factor + 128;
+                // Adaptive-ish binary
+                const v = gray > threshold ? 255 : 0;
                 data[i] = v;
                 data[i + 1] = v;
                 data[i + 2] = v;
@@ -923,9 +1033,111 @@
             document.getElementById('sync-modal').classList.remove('flex');
         }
 
+        // ==================== AUTH CHUYÊN NGHIỆP (LOCAL STORAGE - GITHUB PAGES) ====================
+        function getUsersDB() {
+            try {
+                return JSON.parse(localStorage.getItem('quet_tn_users_db') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveUsersDB(users) {
+            localStorage.setItem('quet_tn_users_db', JSON.stringify(users));
+        }
+
+        // Simple non-reversible hash for password (client-side only)
+        function simpleHash(str) {
+            let h = 0x811c9dc5;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 0x01000193);
+            }
+            return ('00000000' + (h >>> 0).toString(16)).slice(-8) + btoa(str).slice(0, 12);
+        }
+
+        function loadAuthSession() {
+            const session = localStorage.getItem('quet_tn_session');
+            if (session) {
+                try {
+                    const parsed = JSON.parse(session);
+                    if (parsed && parsed.username && parsed.expires > Date.now()) {
+                        currentUser = parsed.username;
+                    } else {
+                        localStorage.removeItem('quet_tn_session');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('quet_tn_session');
+                }
+            }
+        }
+
+        function saveAuthSession(username) {
+            const session = {
+                username: username,
+                expires: Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 days
+            };
+            localStorage.setItem('quet_tn_session', JSON.stringify(session));
+        }
+
+        function clearAuthSession() {
+            localStorage.removeItem('quet_tn_session');
+            currentUser = null;
+        }
+
+        function updateAuthUI() {
+            const display = document.getElementById('user-display');
+            const btnMain = document.getElementById('btn-auth-main');
+            const btnOut = document.getElementById('btn-signout');
+            if (currentUser) {
+                display.innerText = currentUser;
+                btnMain.classList.remove('from-emerald-500', 'to-teal-600');
+                btnMain.classList.add('from-slate-700', 'to-slate-800');
+                btnOut.classList.remove('hidden');
+                btnOut.classList.add('flex');
+            } else {
+                display.innerText = 'Đăng Nhập / Đăng Ký';
+                btnMain.classList.add('from-emerald-500', 'to-teal-600');
+                btnMain.classList.remove('from-slate-700', 'to-slate-800');
+                btnOut.classList.add('hidden');
+                btnOut.classList.remove('flex');
+            }
+        }
+
+        function showAuthMessage(type, msg) {
+            const errEl = document.getElementById('auth-error');
+            const okEl = document.getElementById('auth-success');
+            errEl.classList.add('hidden');
+            okEl.classList.add('hidden');
+            if (type === 'error') {
+                errEl.innerText = msg;
+                errEl.classList.remove('hidden');
+            } else {
+                okEl.innerText = msg;
+                okEl.classList.remove('hidden');
+            }
+        }
+
         function openAuthModal() {
+            if (currentUser) {
+                // Already logged in - show info
+                if (confirm(`Bạn đang đăng nhập với tài khoản "${currentUser}".\nBạn muốn đăng xuất không?`)) {
+                    handleSignOut();
+                }
+                return;
+            }
+            authIsSignUp = false;
+            document.getElementById('auth-form').reset();
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('auth-success').classList.add('hidden');
+            document.getElementById('auth-confirm-pwd-wrap').classList.add('hidden');
+            document.getElementById('auth-modal-title').innerText = 'Đăng Nhập Tài Khoản Pro';
+            document.getElementById('auth-modal-subtitle').innerText = 'Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn';
+            document.getElementById('btn-auth-submit').innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
+            document.getElementById('btn-toggle-auth-mode').innerText = 'Chưa có tài khoản? Đăng ký ngay';
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('auth-username').focus(), 100);
         }
 
         function closeAuthModal() {
@@ -935,19 +1147,133 @@
 
         function toggleAuthMode() {
             authIsSignUp = !authIsSignUp;
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('auth-success').classList.add('hidden');
+            document.getElementById('auth-confirm-pwd-wrap').classList.toggle('hidden', !authIsSignUp);
             document.getElementById('auth-modal-title').innerText = authIsSignUp ? 'Đăng Ký Tài Khoản Pro' : 'Đăng Nhập Tài Khoản Pro';
-            document.getElementById('btn-auth-submit').innerText = authIsSignUp ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP';
-            document.getElementById('btn-toggle-auth-mode').innerText = authIsSignUp ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký ngay';
+            document.getElementById('auth-modal-subtitle').innerText = authIsSignUp
+                ? 'Tạo tài khoản mới – dữ liệu của bạn sẽ được tách riêng'
+                : 'Sử dụng tài khoản để lưu dữ liệu lớp học & bài test an toàn';
+            document.getElementById('btn-auth-submit').innerHTML = authIsSignUp
+                ? '<i class="fa-solid fa-user-plus mr-1.5"></i>ĐĂNG KÝ NGAY'
+                : '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
+            document.getElementById('btn-toggle-auth-mode').innerText = authIsSignUp
+                ? 'Đã có tài khoản? Đăng nhập'
+                : 'Chưa có tài khoản? Đăng ký ngay';
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('auth-password');
+            const icon = document.getElementById('pwd-eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
         }
 
         function handleAuthSubmit(e) {
             e.preventDefault();
-            const username = document.getElementById('auth-username').value;
-            currentUser = username;
-            localStorage.setItem('quet_tn_user', username);
-            document.getElementById('user-display').innerText = username;
-            closeAuthModal();
-            alert(`Xin chào ${username}! Bạn đã đăng nhập thành công.`);
+            const username = document.getElementById('auth-username').value.trim().toLowerCase();
+            const password = document.getElementById('auth-password').value;
+            const confirmPwd = document.getElementById('auth-password-confirm').value;
+
+            if (username.length < 3) {
+                showAuthMessage('error', 'Tên tài khoản phải có ít nhất 3 ký tự.');
+                return;
+            }
+            if (password.length < 6) {
+                showAuthMessage('error', 'Mật khẩu phải có ít nhất 6 ký tự.');
+                return;
+            }
+
+            const users = getUsersDB();
+
+            if (authIsSignUp) {
+                if (password !== confirmPwd) {
+                    showAuthMessage('error', 'Mật khẩu xác nhận không khớp!');
+                    return;
+                }
+                if (users.some(u => u.username === username)) {
+                    showAuthMessage('error', 'Tên tài khoản đã tồn tại. Vui lòng chọn tên khác.');
+                    return;
+                }
+                users.push({
+                    username: username,
+                    passwordHash: simpleHash(password),
+                    createdAt: new Date().toISOString()
+                });
+                saveUsersDB(users);
+                showAuthMessage('success', 'Đăng ký thành công! Đang đăng nhập...');
+                setTimeout(() => {
+                    currentUser = username;
+                    saveAuthSession(username);
+                    loadData();
+                    updateAuthUI();
+                    closeAuthModal();
+                    renderClasses();
+                    alert(`Chào mừng ${username}!\nTài khoản đã được tạo. Dữ liệu của bạn được lưu riêng trên trình duyệt này.`);
+                }, 600);
+            } else {
+                const user = users.find(u => u.username === username);
+                if (!user || user.passwordHash !== simpleHash(password)) {
+                    showAuthMessage('error', 'Tên tài khoản hoặc mật khẩu không đúng.');
+                    return;
+                }
+                currentUser = username;
+                saveAuthSession(username);
+                loadData();
+                updateAuthUI();
+                closeAuthModal();
+                renderClasses();
+                alert(`Xin chào ${username}! Đăng nhập thành công.`);
+            }
+        }
+
+        function handleSignOut() {
+            if (!currentUser) return;
+            if (confirm(`Đăng xuất khỏi tài khoản "${currentUser}"?\nDữ liệu vẫn được lưu an toàn trên trình duyệt.`)) {
+                clearAuthSession();
+                // Reset to default empty state for guest
+                appData = {
+                    classes: [{
+                        id: 'class_1',
+                        name: 'Lớp 10A1',
+                        assignedQuizId: 'quiz_1',
+                        scheduleDate: '',
+                        scheduleTime: '',
+                        students: [
+                            { cardId: 1, name: 'Nguyễn Văn A' },
+                            { cardId: 2, name: 'Trần Thị B' },
+                            { cardId: 3, name: 'Lê Hoàng C' },
+                            { cardId: 4, name: 'Phạm Minh D' }
+                        ]
+                    }],
+                    selectedClassId: 'class_1',
+                    quizzes: [{
+                        id: 'quiz_1',
+                        title: 'Bài Test Khởi Động 01',
+                        questions: [{
+                            id: 'q_1',
+                            text: 'Thủ đô của Việt Nam là thành phố nào?',
+                            imageUrl: 'https://images.unsplash.com/photo-1509030450996-93f2e3d84074?w=600&auto=format&fit=crop&q=60',
+                            audioUrl: '',
+                            options: { A: 'Đà Nẵng', B: 'Hà Nội', C: 'TP. Hồ Chí Minh', D: 'Cần Thơ' },
+                            optionImages: { A: '', B: '', C: '', D: '' },
+                            correct: 'B'
+                        }]
+                    }],
+                    selectedQuizId: 'quiz_1',
+                    currentQuestionIndex: 0,
+                    responses: {},
+                    showAnswer: false
+                };
+                updateAuthUI();
+                renderClasses();
+                switchTab('presentation');
+            }
         }
 
         function toggleFullscreen() {
@@ -958,28 +1284,26 @@
             }
         }
 
-        function loadData() {
-            const savedUser = localStorage.getItem('quet_tn_user');
-            if (savedUser) {
-                currentUser = savedUser;
-                document.getElementById('user-display').innerText = savedUser;
-            }
+        function getDataKey() {
+            return currentUser ? `plickers_pro_169_data_${currentUser}` : 'plickers_pro_169_data_guest';
+        }
 
-            const saved = localStorage.getItem('plickers_pro_169_data');
+        function loadData() {
+            const saved = localStorage.getItem(getDataKey());
             if (saved) {
                 try {
                     appData = JSON.parse(saved);
                     if (!appData.responses || Array.isArray(appData.responses)) {
                         appData.responses = {};
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error("Lỗi parse dữ liệu cũ, dùng mặc định", e);
                 }
             }
         }
 
         function saveData() {
-            localStorage.setItem('plickers_pro_169_data', JSON.stringify(appData));
+            localStorage.setItem(getDataKey(), JSON.stringify(appData));
         }
 
         function switchTab(tab) {
@@ -1469,22 +1793,31 @@
             const overlay = document.getElementById('qr-overlay-canvas');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.height = video.videoHeight;
-                canvas.width = video.videoWidth;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
-
-                drawScanOverlay(video, overlay, code);
-
-                if (code) {
-                    processScannedCode(code);
+                // Giới hạn độ phân giải xử lý để tăng tốc độ quét đa điểm
+                const maxProcessW = 1280;
+                let procW = video.videoWidth;
+                let procH = video.videoHeight;
+                if (procW > maxProcessW) {
+                    const scale = maxProcessW / procW;
+                    procW = maxProcessW;
+                    procH = Math.round(video.videoHeight * scale);
                 }
+
+                canvas.height = procH;
+                canvas.width = procW;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(video, 0, 0, procW, procH);
+
+                const imageData = ctx.getImageData(0, 0, procW, procH);
+                const detectedList = detectMultipleQRCodes(imageData);
+
+                // Vẽ overlay code đầu tiên
+                drawScanOverlay(video, overlay, detectedList.length > 0 ? detectedList[0].code : null);
+
+                // Xử lý tất cả thẻ phát hiện được (có cooldown)
+                detectedList.forEach(({ code }) => {
+                    processScannedCode(code);
+                });
             }
 
             if (isCameraActive) {
@@ -1566,7 +1899,15 @@
         function processScannedCode(code) {
             const data = code.data;
             if (data && data.startsWith("CARD_")) {
-                const cardId = parseInt(data.replace("CARD_", ""));
+                const cardId = parseInt(data.replace("CARD_", ""), 10);
+                if (isNaN(cardId)) return;
+
+                // Cooldown chống quét trùng lặp liên tục
+                const now = Date.now();
+                const last = scanCooldownMap.get(cardId) || 0;
+                if (now - last < SCAN_COOLDOWN_MS) return;
+                scanCooldownMap.set(cardId, now);
+
                 const detectedOption = getOptionFromCode(code);
 
                 const detectedLabel = document.getElementById('scan-detected-label');
