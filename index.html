@@ -19,10 +19,12 @@
                 size: A4 portrait;
                 margin: 0;
             }
-            body {
-                margin: 0;
-                padding: 0;
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
                 background: white !important;
+                height: 100% !important;
+                overflow: visible !important;
             }
             body * { visibility: hidden !important; }
             #print-area, #print-area * { visibility: visible !important; }
@@ -39,6 +41,11 @@
                 break-after: page; 
                 height: 297mm !important;
                 box-sizing: border-box;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-around !important;
+                align-items: center !important;
+                padding: 10mm 0 !important;
             }
         }
 
@@ -56,14 +63,14 @@
             line-height: 1;
         }
         .answer-text {
-            font-size: clamp(2.2rem, 6vh, 4.2rem);
+            font-size: clamp(1.8rem, 5vh, 3.5rem);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
         .live-question-text {
-            font-size: clamp(2rem, 5.5vh, 3.8rem);
+            font-size: clamp(1.8rem, 5vh, 3.5rem);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -89,7 +96,6 @@
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             border-bottom: 4px solid rgba(0,0,0,0.3);
             box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2), 0 10px 15px rgba(0, 0, 0, 0.3);
-            animation: pulse-glow 3s infinite ease-in-out;
         }
         
         .btn-3d::before {
@@ -108,19 +114,14 @@
         }
 
         .btn-3d:hover {
-            transform: translateY(-4px) scale(1.04) !important;
-            box-shadow: 0 12px 20px rgba(0,0,0,0.4), 0 8px 0 rgba(0,0,0,0.2) !important;
-            filter: brightness(1.15);
+            transform: translateY(-2px) scale(1.02) !important;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4), 0 6px 0 rgba(0,0,0,0.2) !important;
+            filter: brightness(1.1);
         }
 
         .btn-3d:active {
             transform: translateY(2px) scale(0.98) !important;
             box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.02); filter: brightness(1.1) drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); }
         }
 
         .card-3d {
@@ -151,7 +152,7 @@
                 Đang quét: Câu 1
             </div>
 
-            <div id="phone-scan-alert" class="absolute bottom-4 inset-x-4 bg-emerald-500 text-slate-950 font-black py-2 px-3 rounded-xl text-sm shadow-2xl transition-all opacity-0 transform translate-y-2">
+            <div id="phone-scan-alert" class="absolute bottom-4 inset-x-4 bg-emerald-500 text-slate-950 font-black py-2 px-3 rounded-xl text-sm shadow-2xl transition-all opacity-0 transform translate-y-2 pointer-events-none">
                 Đã quét thẻ!
             </div>
         </div>
@@ -966,9 +967,13 @@
 
             const saved = localStorage.getItem('plickers_pro_169_data');
             if (saved) {
-                appData = JSON.parse(saved);
-                if (!appData.responses || Array.isArray(appData.responses)) {
-                    appData.responses = {};
+                try {
+                    appData = JSON.parse(saved);
+                    if (!appData.responses || Array.isArray(appData.responses)) {
+                        appData.responses = {};
+                    }
+                } catch(e) {
+                    console.error("Lỗi parse dữ liệu cũ, dùng mặc định", e);
                 }
             }
         }
@@ -1093,10 +1098,10 @@
 
         function addNewQuizGroup() {
             const title = prompt('Nhập tên Bài Test / Bộ câu hỏi mới:');
-            if (title) {
+            if (title && title.trim()) {
                 const newQuiz = {
                     id: 'quiz_' + Date.now(),
-                    title: title,
+                    title: title.trim(),
                     questions: []
                 };
                 appData.quizzes.push(newQuiz);
@@ -1744,10 +1749,10 @@
 
         function addClass() {
             const name = prompt('Nhập tên lớp học mới:');
-            if (name) {
+            if (name && name.trim()) {
                 const newClass = {
                     id: 'class_' + Date.now(),
-                    name: name,
+                    name: name.trim(),
                     assignedQuizId: appData.quizzes[0]?.id || '',
                     scheduleDate: '',
                     scheduleTime: '',
@@ -1809,9 +1814,9 @@
             if (!currentClass) return;
 
             const name = prompt('Nhập tên học sinh:');
-            if (name) {
+            if (name && name.trim()) {
                 const nextCardId = currentClass.students.length > 0 ? Math.max(...currentClass.students.map(s => s.cardId)) + 1 : 1;
-                currentClass.students.push({ cardId: nextCardId, name: name });
+                currentClass.students.push({ cardId: nextCardId, name: name.trim() });
                 saveData();
                 renderStudents();
                 renderClasses();
@@ -1986,9 +1991,9 @@
                     const img2 = await generateCardDataURL(i + 1);
 
                     printContainer.innerHTML += `
-                        <div class="page-break flex flex-col justify-between items-center h-[297mm] p-2 bg-white box-border">
-                            <img src="${img1}" class="w-[195mm] h-[140mm] object-contain border border-slate-300">
-                            <img src="${img2}" class="w-[195mm] h-[140mm] object-contain border border-slate-300">
+                        <div class="page-break">
+                            <img src="${img1}" class="w-[195mm] h-[135mm] object-contain border border-slate-300">
+                            <img src="${img2}" class="w-[195mm] h-[135mm] object-contain border border-slate-300">
                         </div>
                     `;
                 }
