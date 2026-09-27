@@ -156,6 +156,16 @@
                 Đang quét: Câu 1
             </div>
 
+            <button id="phone-torch-btn" onclick="togglePhoneTorch()" class="hidden absolute top-4 right-4 bg-slate-950/80 text-amber-300 border border-amber-400/40 w-9 h-9 rounded-xl items-center justify-center shadow-lg">
+                <i class="fa-solid fa-bolt"></i>
+            </button>
+
+            <div id="phone-zoom-wrap" class="hidden absolute bottom-16 inset-x-4 items-center space-x-2 bg-slate-950/80 rounded-xl px-3 py-2 border border-slate-700">
+                <i class="fa-solid fa-magnifying-glass-plus text-amber-300 text-xs"></i>
+                <input type="range" id="phone-zoom-slider" min="1" max="1" step="0.1" value="1" oninput="setPhoneZoom(this.value)" class="flex-1 accent-amber-400">
+                <span id="phone-zoom-value" class="text-[10px] font-bold text-amber-300 w-8 text-right">1.0x</span>
+            </div>
+
             <div id="phone-scan-alert" class="absolute bottom-4 inset-x-4 bg-emerald-500 text-slate-950 font-black py-2 px-3 rounded-xl text-sm shadow-2xl transition-all opacity-0 transform translate-y-2 pointer-events-none">
                 Đã quét thẻ!
             </div>
@@ -242,16 +252,21 @@
 
                 <div class="md:col-span-2 bg-slate-900 rounded-2xl border border-slate-800 p-4 space-y-4 shadow-xl">
                     <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Bài Test đang giao:</span>
-                                <i class="fa-solid fa-book-open text-amber-400 text-sm"></i>
-                                <select id="select-quiz-for-class" onchange="assignQuizToCurrentClass(this.value)" class="font-bold text-slate-900 bg-amber-400 border border-amber-300 rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer">
-                                </select>
-                            </div>
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-list-check text-amber-400 mr-1.5"></i>Bài tập được phép trình chiếu trong lớp này:
+                            </span>
                             <button onclick="switchTab('quizzes')" class="btn-3d text-xs bg-slate-800 text-slate-200 font-bold px-3 py-1.5 rounded-xl">
                                 <i class="fa-solid fa-plus mr-1"></i>Tạo Bài Test Mới
                             </button>
+                        </div>
+                        <div id="class-quiz-checklist" class="flex flex-wrap gap-2"></div>
+
+                        <div class="flex items-center space-x-2 border-t border-slate-800 pt-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Đang trình chiếu:</span>
+                            <i class="fa-solid fa-book-open text-amber-400 text-sm"></i>
+                            <select id="select-quiz-for-class" onchange="setActiveQuizForClass(this.value)" class="font-bold text-slate-900 bg-amber-400 border border-amber-300 rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer flex-1">
+                            </select>
                         </div>
 
                         <div class="flex flex-wrap items-center justify-between border-t border-slate-800 pt-3 gap-2">
@@ -262,8 +277,13 @@
                                 <input type="time" id="class-schedule-time" onchange="updateClassSchedule()" class="border border-slate-700 rounded-lg p-1 text-xs outline-none bg-slate-900 text-white">
                             </div>
                             <button onclick="resetClassResults()" class="btn-3d text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl flex items-center shadow-lg">
-                                <i class="fa-solid fa-rotate-left mr-1.5"></i>Reset Kết Quả Quét
+                                <i class="fa-solid fa-rotate-left mr-1.5"></i>Reset Kết Quả Quét (bài đang trình chiếu)
                             </button>
+                        </div>
+
+                        <div class="border-t border-slate-800 pt-3">
+                            <h4 class="text-xs font-bold text-amber-400 mb-2 flex items-center"><i class="fa-solid fa-chart-simple mr-1.5"></i>Kết quả theo từng bài đã giao (Trích xuất trực tiếp tại đây)</h4>
+                            <div id="class-quiz-results-list" class="space-y-1.5"></div>
                         </div>
                     </div>
 
@@ -344,6 +364,8 @@
                             <div class="flex items-center space-x-3">
                                 <span id="live-question-number" class="bg-amber-400 text-slate-950 text-sm font-black px-4 py-1.5 rounded-full shadow-lg">Câu 1 / 2</span>
                                 <span id="live-quiz-title" class="bg-slate-800 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full border border-slate-700"><i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>Bài Test</span>
+                                <select id="live-quiz-switcher" onchange="setActiveQuizForClass(this.value)" class="hidden font-bold text-slate-900 bg-amber-300 border border-amber-300 rounded-full px-3 py-1.5 text-xs outline-none cursor-pointer">
+                                </select>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="resetCurrentQuestionResults()" title="Reset quét câu này" class="btn-3d text-xs bg-rose-900/60 hover:bg-rose-800 text-rose-200 px-3 py-1.5 rounded-xl font-bold flex items-center">
@@ -462,6 +484,9 @@
                         <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
                             <i id="pwd-eye-icon" class="fa-solid fa-eye text-sm"></i>
                         </button>
+                    </div>
+                    <div id="auth-forgot-wrap" class="text-right mt-1">
+                        <button type="button" onclick="handleForgotPassword()" class="text-[11px] text-indigo-400 hover:underline font-semibold">Quên mật khẩu?</button>
                     </div>
                 </div>
                 <div id="auth-confirm-pwd-wrap" class="hidden">
@@ -621,7 +646,8 @@
                 {
                     id: 'class_1',
                     name: 'Lớp 10A1',
-                    assignedQuizId: 'quiz_1',
+                    assignedQuizIds: ['quiz_1'],
+                    activeQuizId: 'quiz_1',
                     scheduleDate: '',
                     scheduleTime: '',
                     students: [
@@ -653,6 +679,7 @@
             selectedQuizId: 'quiz_1',
             currentQuestionIndex: 0,
             responses: {},
+            progress: {},
             showAnswer: false
         };
 
@@ -676,6 +703,13 @@
         const scanCooldownMap = new Map();
         const SCAN_COOLDOWN_MS = 1200;
 
+        // Điều tiết tần suất xử lý khung hình (giữ mượt máy yếu khi quét lưới đa vùng)
+        const SCAN_FRAME_INTERVAL_MS = 90;
+        let lastLaptopScanTs = 0;
+        let lastPhoneScanTs = 0;
+        let currentZoomLevel = 1;
+        let phoneCameraTrack = null;
+
         // BẮT THAM SỐ URL KHI ĐIỆN THOẠI QUÉT QR KẾT NỐI
         window.addEventListener('DOMContentLoaded', () => {
             loadAuthSession();
@@ -695,6 +729,7 @@
             } else {
                 try {
                     loadData();
+                    migrateAppData();
                     initRealtimeSync();
                     renderClasses();
                     updateAuthUI();
@@ -807,14 +842,19 @@
 
         function handleIncomingScanResult(data) {
             const { cardId, option, questionIndex } = data;
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            const quizId = getActiveQuizIdForClass(currentClass);
+            if (!currentClass || !quizId) return;
+            const bucket = getResponsesBucket(currentClass.id, quizId, true);
             const qIdx = questionIndex !== undefined ? questionIndex : appData.currentQuestionIndex;
-            if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
-            
-            if (appData.responses[qIdx][cardId] !== option) {
-                appData.responses[qIdx][cardId] = option;
+            if (!bucket[qIdx]) bucket[qIdx] = {};
+
+            if (bucket[qIdx][cardId] !== option) {
+                bucket[qIdx][cardId] = option;
                 playBeepSound();
                 saveData();
                 renderCardStatusGrid();
+                renderClassQuizResultsList();
             }
         }
 
@@ -869,6 +909,7 @@
                     phoneVideoStream = stream;
                     video.srcObject = stream;
                     video.play();
+                    setupPhoneCameraControls(stream);
                     phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
                 })
                 .catch(err => {
@@ -877,51 +918,71 @@
                             phoneVideoStream = stream;
                             video.srcObject = stream;
                             video.play();
+                            setupPhoneCameraControls(stream);
                             phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
                         })
                         .catch(e => alert("Không thể khởi động Camera Điện Thoại: " + e.message));
                 });
         }
 
+        // Bật điều khiển Zoom quang học/số + Đèn Flash nếu thiết bị hỗ trợ (giúp quét rõ nét ở khoảng cách xa 10m)
+        function setupPhoneCameraControls(stream) {
+            try {
+                const track = stream.getVideoTracks()[0];
+                phoneCameraTrack = track;
+                if (!track || typeof track.getCapabilities !== 'function') return;
+                const caps = track.getCapabilities();
+
+                if (caps.zoom) {
+                    const slider = document.getElementById('phone-zoom-slider');
+                    const wrap = document.getElementById('phone-zoom-wrap');
+                    slider.min = caps.zoom.min;
+                    slider.max = caps.zoom.max;
+                    slider.step = caps.zoom.step || 0.1;
+                    currentZoomLevel = Math.min(Math.max(1.5, caps.zoom.min), caps.zoom.max);
+                    slider.value = currentZoomLevel;
+                    document.getElementById('phone-zoom-value').innerText = `${parseFloat(currentZoomLevel).toFixed(1)}x`;
+                    track.applyConstraints({ advanced: [{ zoom: currentZoomLevel }] }).catch(() => {});
+                    wrap.classList.remove('hidden');
+                    wrap.classList.add('flex');
+                }
+
+                if (caps.torch) {
+                    document.getElementById('phone-torch-btn').classList.remove('hidden');
+                    document.getElementById('phone-torch-btn').classList.add('flex');
+                }
+            } catch (e) { console.log('Không lấy được khả năng camera:', e); }
+        }
+
+        function setPhoneZoom(value) {
+            currentZoomLevel = parseFloat(value);
+            document.getElementById('phone-zoom-value').innerText = `${currentZoomLevel.toFixed(1)}x`;
+            if (phoneCameraTrack) {
+                phoneCameraTrack.applyConstraints({ advanced: [{ zoom: currentZoomLevel }] }).catch(() => {});
+            }
+        }
+
+        let phoneTorchOn = false;
+        function togglePhoneTorch() {
+            if (!phoneCameraTrack) return;
+            phoneTorchOn = !phoneTorchOn;
+            phoneCameraTrack.applyConstraints({ advanced: [{ torch: phoneTorchOn }] }).catch(() => {});
+            const btn = document.getElementById('phone-torch-btn');
+            if (btn) {
+                btn.classList.toggle('bg-amber-400', phoneTorchOn);
+                btn.classList.toggle('text-slate-950', phoneTorchOn);
+                btn.classList.toggle('bg-slate-950/80', !phoneTorchOn);
+                btn.classList.toggle('text-amber-300', !phoneTorchOn);
+            }
+        }
+
+        // ==================== QUÉT ĐA THẺ NÂNG CAO: CHIA LƯỚI ĐỘ PHÂN GIẢI CAO ĐỂ QUÉT NHIỀU THẺ CÙNG LÚC Ở KHOẢNG CÁCH XA (≤10M) ====================
         function detectMultipleQRCodes(imageData) {
             const results = new Map();
             const w = imageData.width;
             const h = imageData.height;
 
-            const tryScan = (imgData) => {
-                const code = jsQR(imgData.data, imgData.width, imgData.height, {
-                    inversionAttempts: "dontInvert"
-                });
-                if (code && code.data && code.data.startsWith("CARD_")) {
-                    const cardId = parseInt(code.data.replace("CARD_", ""), 10);
-                    if (!isNaN(cardId) && !results.has(cardId)) {
-                        results.set(cardId, { code, option: getOptionFromCode(code) });
-                    }
-                }
-            };
-
-            tryScan(imageData);
-
-            const enhanced1 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
-            enhanceImageForDistance(enhanced1, 2.2, 110);
-            tryScan(enhanced1);
-
-            if (results.size === 0) {
-                const enhanced2 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
-                enhanceImageForDistance(enhanced2, 2.8, 100);
-                tryScan(enhanced2);
-            }
-
-            const rois = [
-                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }
-            ];
-
-            const srcData = imageData.data;
-            rois.forEach(roi => {
+            const extractROI = (srcData, roi) => {
                 const roiData = new Uint8ClampedArray(roi.rw * roi.rh * 4);
                 for (let y = 0; y < roi.rh; y++) {
                     for (let x = 0; x < roi.rw; x++) {
@@ -933,9 +994,72 @@
                         roiData[dstIdx + 3] = 255;
                     }
                 }
-                const roiImg = new ImageData(roiData, roi.rw, roi.rh);
-                tryScan(roiImg);
-                enhanceImageForDistance(roiImg, 2.0, 115);
+                return new ImageData(roiData, roi.rw, roi.rh);
+            };
+
+            const tryScan = (imgData) => {
+                const code = jsQR(imgData.data, imgData.width, imgData.height, {
+                    inversionAttempts: "dontInvert"
+                });
+                if (code && code.data && code.data.startsWith("CARD_")) {
+                    const cardId = parseInt(code.data.replace("CARD_", ""), 10);
+                    if (!isNaN(cardId) && !results.has(cardId)) {
+                        results.set(cardId, { code, option: getOptionFromCode(code) });
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            // 1) Quét toàn khung hình trước (nhanh, bắt thẻ gần/rõ)
+            tryScan(imageData);
+
+            const enhanced1 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
+            enhanceImageForDistance(enhanced1, 2.2, 110);
+            tryScan(enhanced1);
+
+            const enhanced2 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
+            enhanceImageForDistance(enhanced2, 2.8, 100);
+            tryScan(enhanced2);
+
+            // 2) LƯỚI 4x3 CHỒNG LẤN (đa nhiệm): mỗi ô được xử lý như một "khung hình phóng to"
+            // giúp jsQR dò được các thẻ nhỏ / ở xa nằm rải rác nhiều nơi trong khung hình rộng.
+            const srcData = imageData.data;
+            const gridCols = 4, gridRows = 3;
+            const tileWFrac = 0.34, tileHFrac = 0.40; // mỗi ô ~1/3 khung, chồng lấn ~15-20%
+            const gridRois = [];
+            for (let r = 0; r < gridRows; r++) {
+                for (let cIdx = 0; cIdx < gridCols; cIdx++) {
+                    const stepX = (1 - tileWFrac) / (gridCols - 1);
+                    const stepY = (1 - tileHFrac) / (gridRows - 1);
+                    const x = Math.floor(cIdx * stepX * w);
+                    const y = Math.floor(r * stepY * h);
+                    const rw = Math.min(Math.floor(tileWFrac * w), w - x);
+                    const rh = Math.min(Math.floor(tileHFrac * h), h - y);
+                    if (rw > 20 && rh > 20) gridRois.push({ x, y, rw, rh });
+                }
+            }
+
+            gridRois.forEach(roi => {
+                const roiImg = extractROI(srcData, roi);
+                const found = tryScan(roiImg);
+                if (!found) {
+                    enhanceImageForDistance(roiImg, 2.3, 112);
+                    tryScan(roiImg);
+                }
+            });
+
+            // 3) 5 vùng lớn phủ góc + trung tâm (bổ trợ cho thẻ nằm vắt giữa các ô lưới)
+            const cornerRois = [
+                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
+                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }
+            ];
+
+            cornerRois.forEach(roi => {
+                const roiImg = extractROI(srcData, roi);
                 tryScan(roiImg);
             });
 
@@ -947,8 +1071,15 @@
             const canvas = document.getElementById('phone-qr-canvas');
             const overlay = document.getElementById('phone-qr-overlay');
 
+            const now0 = Date.now();
+            if (now0 - lastPhoneScanTs < SCAN_FRAME_INTERVAL_MS) {
+                phoneScanAnimationId = requestAnimationFrame(scanPhoneQRCodeFrame);
+                return;
+            }
+            lastPhoneScanTs = now0;
+
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                const maxProcessW = 1920;
+                const maxProcessW = 2560;
                 let procW = video.videoWidth;
                 let procH = video.videoHeight;
                 if (procW > maxProcessW) {
@@ -1089,7 +1220,8 @@
                 classes: [{
                     id: 'class_1',
                     name: 'Lớp 10A1',
-                    assignedQuizId: 'quiz_1',
+                    assignedQuizIds: ['quiz_1'],
+                    activeQuizId: 'quiz_1',
                     scheduleDate: '',
                     scheduleTime: '',
                     students: [
@@ -1116,8 +1248,70 @@
                 selectedQuizId: 'quiz_1',
                 currentQuestionIndex: 0,
                 responses: {},
+                progress: {},
                 showAnswer: false
             };
+        }
+
+        // ==================== HỖ TRỢ: BÀI TẬP GIAO CHO LỚP (NHIỀU BÀI) & KẾT QUẢ THEO TỪNG LỚP/BÀI ====================
+        function migrateAppData() {
+            if (!appData.progress) appData.progress = {};
+            if (!appData.responses) appData.responses = {};
+
+            (appData.classes || []).forEach(c => {
+                if (!Array.isArray(c.assignedQuizIds)) {
+                    c.assignedQuizIds = c.assignedQuizId ? [c.assignedQuizId] : [];
+                }
+                if (!c.activeQuizId || !c.assignedQuizIds.includes(c.activeQuizId)) {
+                    c.activeQuizId = c.assignedQuizIds[0] || '';
+                }
+            });
+
+            // Phát hiện dữ liệu quét cũ (định dạng phẳng: responses[questionIndex][cardId]) và chuyển vào lớp/bài đang chọn
+            const respKeys = Object.keys(appData.responses);
+            const looksFlat = respKeys.length > 0 && respKeys.every(k => /^\d+$/.test(k));
+            if (looksFlat) {
+                const c = appData.classes.find(cl => cl.id === appData.selectedClassId) || appData.classes[0];
+                const quizId = c ? getActiveQuizIdForClass(c) : appData.quizzes[0]?.id;
+                if (c && quizId) {
+                    const oldResponses = appData.responses;
+                    appData.responses = {};
+                    appData.responses[c.id] = {};
+                    appData.responses[c.id][quizId] = oldResponses;
+                    if (!appData.progress[c.id]) appData.progress[c.id] = {};
+                    appData.progress[c.id][quizId] = appData.currentQuestionIndex || 0;
+                }
+            }
+        }
+
+        function getActiveQuizIdForClass(c) {
+            if (!c) return appData.quizzes[0]?.id || '';
+            if (!Array.isArray(c.assignedQuizIds)) c.assignedQuizIds = c.assignedQuizId ? [c.assignedQuizId] : [];
+            if (c.activeQuizId && c.assignedQuizIds.includes(c.activeQuizId)) return c.activeQuizId;
+            return c.assignedQuizIds[0] || '';
+        }
+
+        function getResponsesBucket(classId, quizId, create) {
+            if (!classId || !quizId) return create ? {} : null;
+            if (!appData.responses[classId]) {
+                if (!create) return null;
+                appData.responses[classId] = {};
+            }
+            if (!appData.responses[classId][quizId]) {
+                if (!create) return null;
+                appData.responses[classId][quizId] = {};
+            }
+            return appData.responses[classId][quizId];
+        }
+
+        function getProgressIndex(classId, quizId) {
+            return (appData.progress?.[classId]?.[quizId]) || 0;
+        }
+
+        function setProgressIndex(classId, quizId, idx) {
+            if (!appData.progress) appData.progress = {};
+            if (!appData.progress[classId]) appData.progress[classId] = {};
+            appData.progress[classId][quizId] = idx;
         }
 
         function loadAuthSession() {
@@ -1127,6 +1321,7 @@
                     currentUser = user.displayName || user.email || user.uid;
                     updateAuthUI();
                     await loadDataFromCloud(user.uid);
+                    migrateAppData();
                     if (!isPhoneScannerMode) {
                         renderClasses();
                         renderPresentation();
@@ -1190,6 +1385,7 @@
             document.getElementById('auth-success').classList.add('hidden');
             document.getElementById('auth-confirm-pwd-wrap').classList.add('hidden');
             document.getElementById('auth-displayname-wrap').classList.add('hidden');
+            document.getElementById('auth-forgot-wrap').classList.remove('hidden');
             document.getElementById('auth-modal-title').innerText = 'Đăng Nhập Tài Khoản Pro';
             document.getElementById('auth-modal-subtitle').innerText = 'Đăng nhập bằng Email – đồng bộ dữ liệu trên mọi thiết bị';
             document.getElementById('btn-auth-submit').innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1.5"></i>ĐĂNG NHẬP';
@@ -1210,6 +1406,7 @@
             document.getElementById('auth-success').classList.add('hidden');
             document.getElementById('auth-confirm-pwd-wrap').classList.toggle('hidden', !authIsSignUp);
             document.getElementById('auth-displayname-wrap').classList.toggle('hidden', !authIsSignUp);
+            document.getElementById('auth-forgot-wrap').classList.toggle('hidden', authIsSignUp);
             document.getElementById('auth-modal-title').innerText = authIsSignUp ? 'Đăng Ký Tài Khoản Pro' : 'Đăng Nhập Tài Khoản Pro';
             document.getElementById('btn-auth-submit').innerHTML = authIsSignUp
                 ? '<i class="fa-solid fa-user-plus mr-1.5"></i>ĐĂNG KÝ NGAY'
@@ -1217,6 +1414,50 @@
             document.getElementById('btn-toggle-auth-mode').innerText = authIsSignUp
                 ? 'Đã có tài khoản? Đăng nhập'
                 : 'Chưa có tài khoản? Đăng ký ngay';
+        }
+
+        // BẢN DỊCH LỖI FIREBASE SANG TIẾNG VIỆT DỄ HIỂU
+        const FIREBASE_ERROR_MESSAGES = {
+            'auth/invalid-credential': 'Sai Email hoặc Mật khẩu. Nếu bạn chưa có tài khoản, hãy bấm "Chưa có tài khoản? Đăng ký ngay" bên dưới.',
+            'auth/user-not-found': 'Email này chưa được đăng ký. Hãy bấm "Chưa có tài khoản? Đăng ký ngay" để tạo tài khoản mới.',
+            'auth/wrong-password': 'Mật khẩu không đúng. Vui lòng thử lại hoặc bấm "Quên mật khẩu?".',
+            'auth/invalid-email': 'Địa chỉ Email không hợp lệ. Vui lòng kiểm tra lại.',
+            'auth/user-disabled': 'Tài khoản này đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.',
+            'auth/email-already-in-use': 'Email này đã được đăng ký trước đó. Hãy chuyển sang chế độ "Đăng nhập" thay vì đăng ký.',
+            'auth/weak-password': 'Mật khẩu quá yếu. Vui lòng dùng mật khẩu từ 6 ký tự trở lên.',
+            'auth/too-many-requests': 'Bạn đã thử sai quá nhiều lần. Vui lòng đợi vài phút rồi thử lại, hoặc bấm "Quên mật khẩu?" để đặt lại.',
+            'auth/network-request-failed': 'Lỗi kết nối mạng. Vui lòng kiểm tra Internet và thử lại.',
+            'auth/missing-password': 'Vui lòng nhập mật khẩu.',
+            'auth/operation-not-allowed': 'Đăng nhập bằng Email/Mật khẩu chưa được bật cho ứng dụng này. Vui lòng liên hệ quản trị viên để bật trong Firebase Console (Authentication → Sign-in method → Email/Password).',
+            'auth/popup-closed-by-user': 'Cửa sổ đăng nhập đã bị đóng trước khi hoàn tất.',
+            'auth/internal-error': 'Lỗi hệ thống Firebase. Vui lòng thử lại sau ít phút.'
+        };
+
+        function translateFirebaseError(err) {
+            if (!err) return 'Đã xảy ra lỗi không xác định.';
+            const code = err.code || '';
+            if (FIREBASE_ERROR_MESSAGES[code]) return FIREBASE_ERROR_MESSAGES[code];
+            if (code) return `Lỗi (${code}). Vui lòng kiểm tra lại Email/Mật khẩu hoặc thử lại sau.`;
+            return err.message || 'Đã xảy ra lỗi không xác định.';
+        }
+
+        async function handleForgotPassword() {
+            if (!firebaseReady && !initFirebase()) {
+                alert('Chưa cấu hình Firebase hợp lệ.');
+                return;
+            }
+            const emailInput = document.getElementById('auth-username');
+            let email = (emailInput.value || '').trim().toLowerCase();
+            if (!email) {
+                email = (prompt('Nhập Email để nhận link đặt lại mật khẩu:') || '').trim().toLowerCase();
+            }
+            if (!email) return;
+            try {
+                await firebaseAuth.sendPasswordResetEmail(email);
+                showAuthMessage('success', `Đã gửi link đặt lại mật khẩu tới ${email}. Vui lòng kiểm tra hộp thư (kể cả mục Spam).`);
+            } catch (err) {
+                showAuthMessage('error', translateFirebaseError(err));
+            }
         }
 
         function togglePasswordVisibility() {
@@ -1267,7 +1508,8 @@
                     setTimeout(() => { closeAuthModal(); updateAuthUI(); }, 500);
                 }
             } catch (err) {
-                showAuthMessage('error', err.message);
+                console.error('Firebase Auth Error:', err.code, err.message);
+                showAuthMessage('error', translateFirebaseError(err));
             } finally {
                 btn.disabled = false;
             }
@@ -1426,19 +1668,114 @@
         function renderQuizDropdowns() {
             const selectClassQuiz = document.getElementById('select-quiz-for-class');
             const selectActiveQuiz = document.getElementById('select-active-quiz');
-            if (!selectClassQuiz || !selectActiveQuiz) return;
-            
-            selectClassQuiz.innerHTML = '';
-            selectActiveQuiz.innerHTML = '';
+            const checklist = document.getElementById('class-quiz-checklist');
+            if (!selectActiveQuiz) return;
 
+            selectActiveQuiz.innerHTML = '';
             appData.quizzes.forEach(q => {
-                selectClassQuiz.innerHTML += `<option value="${q.id}">${q.title} (${q.questions.length} câu)</option>`;
                 selectActiveQuiz.innerHTML += `<option value="${q.id}">${q.title} (${q.questions.length} câu)</option>`;
             });
+            selectActiveQuiz.value = appData.selectedQuizId;
 
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (currentClass) selectClassQuiz.value = currentClass.assignedQuizId || appData.quizzes[0]?.id;
-            selectActiveQuiz.value = appData.selectedQuizId;
+            if (!selectClassQuiz || !checklist) return;
+
+            if (!currentClass) {
+                checklist.innerHTML = `<span class="text-xs text-slate-500">Chưa chọn lớp học.</span>`;
+                selectClassQuiz.innerHTML = '';
+                return;
+            }
+            if (!Array.isArray(currentClass.assignedQuizIds)) {
+                currentClass.assignedQuizIds = currentClass.assignedQuizId ? [currentClass.assignedQuizId] : [];
+            }
+
+            if (appData.quizzes.length === 0) {
+                checklist.innerHTML = `<span class="text-xs text-slate-500">Chưa có bài test nào. Hãy tạo bài test trước.</span>`;
+            } else {
+                checklist.innerHTML = appData.quizzes.map(q => {
+                    const checked = currentClass.assignedQuizIds.includes(q.id);
+                    return `
+                        <label class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer transition ${checked ? 'bg-emerald-950/70 border-emerald-500 text-emerald-200' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}">
+                            <input type="checkbox" class="accent-emerald-500" ${checked ? 'checked' : ''} onchange="toggleClassQuizAssignment('${q.id}', this.checked)">
+                            <span>${q.title}</span>
+                        </label>
+                    `;
+                }).join('');
+            }
+
+            const assignedQuizzes = appData.quizzes.filter(q => currentClass.assignedQuizIds.includes(q.id));
+            if (assignedQuizzes.length === 0) {
+                selectClassQuiz.innerHTML = `<option value="">-- Chưa chọn bài tập nào --</option>`;
+                selectClassQuiz.disabled = true;
+            } else {
+                selectClassQuiz.disabled = false;
+                selectClassQuiz.innerHTML = assignedQuizzes.map(q => `<option value="${q.id}">${q.title} (${q.questions.length} câu)</option>`).join('');
+                selectClassQuiz.value = getActiveQuizIdForClass(currentClass);
+            }
+
+            renderClassQuizResultsList();
+        }
+
+        function toggleClassQuizAssignment(quizId, isChecked) {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            if (!currentClass) return;
+            if (!Array.isArray(currentClass.assignedQuizIds)) currentClass.assignedQuizIds = [];
+
+            if (isChecked) {
+                if (!currentClass.assignedQuizIds.includes(quizId)) currentClass.assignedQuizIds.push(quizId);
+                if (!currentClass.activeQuizId) currentClass.activeQuizId = quizId;
+            } else {
+                currentClass.assignedQuizIds = currentClass.assignedQuizIds.filter(id => id !== quizId);
+                if (currentClass.activeQuizId === quizId) {
+                    currentClass.activeQuizId = currentClass.assignedQuizIds[0] || '';
+                }
+            }
+            saveData();
+            renderQuizDropdowns();
+            renderPresentation();
+        }
+
+        function setActiveQuizForClass(quizId) {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            if (!currentClass || !quizId) return;
+            currentClass.activeQuizId = quizId;
+            saveData();
+            renderQuizDropdowns();
+            renderPresentation();
+        }
+
+        function renderClassQuizResultsList() {
+            const container = document.getElementById('class-quiz-results-list');
+            if (!container) return;
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            if (!currentClass) { container.innerHTML = ''; return; }
+
+            const assignedIds = Array.isArray(currentClass.assignedQuizIds) ? currentClass.assignedQuizIds : [];
+            if (assignedIds.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-500">Lớp này chưa được giao bài tập nào.</span>`;
+                return;
+            }
+
+            container.innerHTML = assignedIds.map(qid => {
+                const quiz = appData.quizzes.find(q => q.id === qid);
+                if (!quiz) return '';
+                const bucket = getResponsesBucket(currentClass.id, qid, false) || {};
+                const scannedCardIds = new Set();
+                Object.values(bucket).forEach(qResp => Object.keys(qResp || {}).forEach(cid => scannedCardIds.add(cid)));
+                const totalStudents = (currentClass.students || []).length;
+                const isActive = getActiveQuizIdForClass(currentClass) === qid;
+                return `
+                    <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
+                        <div class="min-w-0 flex-1">
+                            <span class="text-xs font-bold text-slate-200 truncate block">${quiz.title} ${isActive ? '<span class="ml-1 text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-black">ĐANG CHIẾU</span>' : ''}</span>
+                            <span class="text-[10px] text-slate-500">Đã quét: ${scannedCardIds.size}/${totalStudents} học sinh (ít nhất 1 câu)</span>
+                        </div>
+                        <button onclick="exportResultsCSVFor('${currentClass.id}', '${qid}')" class="btn-3d text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center flex-none ml-2">
+                            <i class="fa-solid fa-file-excel mr-1"></i>Xuất kết quả
+                        </button>
+                    </div>
+                `;
+            }).join('');
         }
 
         function addNewQuizGroup() {
@@ -1481,12 +1818,8 @@
         }
 
         function assignQuizToCurrentClass(quizId) {
-            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            if (currentClass) {
-                currentClass.assignedQuizId = quizId;
-                appData.responses = {}; 
-                saveData();
-            }
+            // Giữ lại để tương thích ngược - nay dùng setActiveQuizForClass()
+            setActiveQuizForClass(quizId);
         }
 
         function updateClassSchedule() {
@@ -1499,22 +1832,32 @@
         }
 
         function resetCurrentQuestionResults() {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            const quizId = getActiveQuizIdForClass(currentClass);
+            const bucket = getResponsesBucket(currentClass?.id, quizId, false);
             const qIdx = appData.currentQuestionIndex;
-            if (appData.responses[qIdx] && Object.keys(appData.responses[qIdx]).length > 0) {
+            if (bucket && bucket[qIdx] && Object.keys(bucket[qIdx]).length > 0) {
                 if (confirm(`Xóa kết quả quét của Câu ${qIdx + 1}?`)) {
-                    appData.responses[qIdx] = {};
+                    bucket[qIdx] = {};
                     saveData();
                     renderCardStatusGrid();
+                    renderClassQuizResultsList();
                 }
             } else { alert('Chưa có dữ liệu quét!'); }
         }
 
         function resetAllQuizResults() {
-            if (Object.keys(appData.responses).length > 0) {
-                if (confirm('Reset TOÀN BỘ kết quả quét?')) {
-                    appData.responses = {};
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            const quizId = getActiveQuizIdForClass(currentClass);
+            const bucket = getResponsesBucket(currentClass?.id, quizId, false);
+            if (bucket && Object.keys(bucket).length > 0) {
+                if (confirm('Reset TOÀN BỘ kết quả quét của bài đang trình chiếu?')) {
+                    if (appData.responses[currentClass.id]) appData.responses[currentClass.id][quizId] = {};
+                    setProgressIndex(currentClass.id, quizId, 0);
+                    appData.currentQuestionIndex = 0;
                     saveData();
                     renderCardStatusGrid();
+                    renderClassQuizResultsList();
                 }
             } else { alert('Chưa có dữ liệu để reset!'); }
         }
@@ -1762,8 +2105,15 @@
             const canvas = document.getElementById('qr-canvas');
             const overlay = document.getElementById('qr-overlay-canvas');
 
+            const now0 = Date.now();
+            if (now0 - lastLaptopScanTs < SCAN_FRAME_INTERVAL_MS) {
+                if (isCameraActive) scanAnimationId = requestAnimationFrame(scanQRCodeFrame);
+                return;
+            }
+            lastLaptopScanTs = now0;
+
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                const maxProcessW = 1280;
+                const maxProcessW = 1600;
                 let procW = video.videoWidth;
                 let procH = video.videoHeight;
                 if (procW > maxProcessW) {
@@ -1870,15 +2220,20 @@
                 scanCooldownMap.set(cardId, now);
 
                 const detectedOption = getOptionFromCode(code);
+                const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+                const quizId = getActiveQuizIdForClass(currentClass);
+                if (!currentClass || !quizId) return;
+                const bucket = getResponsesBucket(currentClass.id, quizId, true);
                 const qIdx = appData.currentQuestionIndex;
-                if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
+                if (!bucket[qIdx]) bucket[qIdx] = {};
 
-                if (appData.responses[qIdx][cardId] !== detectedOption) {
-                    appData.responses[qIdx][cardId] = detectedOption;
+                if (bucket[qIdx][cardId] !== detectedOption) {
+                    bucket[qIdx][cardId] = detectedOption;
                     sendScanResultToPC(cardId, detectedOption, qIdx);
                     playBeepSound();
                     saveData();
                     renderCardStatusGrid();
+                    renderClassQuizResultsList();
                 }
             }
         }
@@ -1886,11 +2241,20 @@
         function exportResultsCSV() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!currentClass) return alert("Vui lòng chọn lớp!");
-            
-            const activeQuizId = currentClass.assignedQuizId || appData.quizzes[0]?.id;
-            const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
+            const activeQuizId = getActiveQuizIdForClass(currentClass);
+            if (!activeQuizId) return alert("Lớp này chưa được giao bài tập nào để trình chiếu!");
+            exportResultsCSVFor(currentClass.id, activeQuizId);
+        }
+
+        // Xuất kết quả cho ĐÚNG một cặp Lớp + Bài test (dùng ở cả trang Trình chiếu và trang Quản lý Lớp)
+        function exportResultsCSVFor(classId, quizId) {
+            const targetClass = appData.classes.find(c => c.id === classId);
+            if (!targetClass) return alert("Không tìm thấy lớp học!");
+
+            const currentQuiz = appData.quizzes.find(q => q.id === quizId);
             if (!currentQuiz || !currentQuiz.questions) return alert("Chưa có câu hỏi!");
 
+            const bucket = getResponsesBucket(classId, quizId, false) || {};
             const totalQuestions = currentQuiz.questions.length;
             let headers = ["Mã Thẻ", "Họ và Tên Học Sinh"];
             for (let i = 0; i < totalQuestions; i++) headers.push(`Câu ${i + 1} (ĐA: ${currentQuiz.questions[i].correct})`);
@@ -1898,13 +2262,13 @@
 
             let csvRows = [headers.map(h => `"${h}"`).join(",")];
 
-            currentClass.students.forEach(s => {
+            targetClass.students.forEach(s => {
                 let row = [`"${s.cardId}"`, `"${s.name}"`];
                 let correctCount = 0;
 
                 for (let i = 0; i < totalQuestions; i++) {
                     const q = currentQuiz.questions[i];
-                    const userAns = (appData.responses[i] && appData.responses[i][s.cardId]) ? appData.responses[i][s.cardId] : "-";
+                    const userAns = (bucket[i] && bucket[i][s.cardId]) ? bucket[i][s.cardId] : "-";
                     if (userAns === q.correct) {
                         correctCount++;
                         row.push(`"${userAns} (Đúng)"`);
@@ -1925,7 +2289,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `BaoCao_${currentClass.name}.csv`);
+            link.setAttribute("download", `BaoCao_${targetClass.name}_${currentQuiz.title}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2012,10 +2376,12 @@
         function addClass() {
             const name = prompt('Nhập tên lớp học mới:');
             if (name && name.trim()) {
+                const defaultQuizId = appData.quizzes[0]?.id || '';
                 const newClass = {
                     id: 'class_' + Date.now(),
                     name: name.trim(),
-                    assignedQuizId: appData.quizzes[0]?.id || '',
+                    assignedQuizIds: defaultQuizId ? [defaultQuizId] : [],
+                    activeQuizId: defaultQuizId,
                     scheduleDate: '',
                     scheduleTime: '',
                     students: []
@@ -2140,10 +2506,11 @@
 
         function renderPresentation() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const activeQuizId = currentClass?.assignedQuizId || appData.selectedQuizId || appData.quizzes[0]?.id;
+            const activeQuizId = getActiveQuizIdForClass(currentClass);
             const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
 
             const titleEl = document.getElementById('live-quiz-title');
+            const switcherEl = document.getElementById('live-quiz-switcher');
             const qNumEl = document.getElementById('live-question-number');
             const qTextEl = document.getElementById('live-question-text');
             const optionsGrid = document.getElementById('live-options-grid');
@@ -2153,6 +2520,31 @@
             const audioPlayer = document.getElementById('live-audio-player');
 
             if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>${currentQuiz ? currentQuiz.title : 'Chưa chọn bài test'}`;
+
+            // Nếu lớp được giao NHIỀU bài test, hiện dropdown để chuyển nhanh ngay tại màn hình trình chiếu
+            const assignedIds = currentClass && Array.isArray(currentClass.assignedQuizIds) ? currentClass.assignedQuizIds : [];
+            if (switcherEl) {
+                if (assignedIds.length > 1) {
+                    switcherEl.classList.remove('hidden');
+                    switcherEl.innerHTML = assignedIds.map(qid => {
+                        const qz = appData.quizzes.find(q => q.id === qid);
+                        return qz ? `<option value="${qid}">${qz.title}</option>` : '';
+                    }).join('');
+                    switcherEl.value = activeQuizId;
+                } else {
+                    switcherEl.classList.add('hidden');
+                }
+            }
+
+            if (!currentClass || assignedIds.length === 0) {
+                if (qNumEl) qNumEl.innerText = 'Câu 0 / 0';
+                if (qTextEl) qTextEl.innerText = 'Lớp này chưa được giao bài tập nào. Vui lòng vào Tab "Lớp học" để chọn bài tập cho phép trình chiếu!';
+                if (optionsGrid) optionsGrid.innerHTML = '';
+                if (imgContainer) imgContainer.classList.add('hidden');
+                if (audioContainer) audioContainer.classList.add('hidden');
+                renderCardStatusGrid();
+                return;
+            }
 
             if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
                 if (qNumEl) qNumEl.innerText = 'Câu 0 / 0';
@@ -2164,8 +2556,10 @@
                 return;
             }
 
+            appData.currentQuestionIndex = getProgressIndex(currentClass.id, activeQuizId);
             if (appData.currentQuestionIndex >= currentQuiz.questions.length) {
                 appData.currentQuestionIndex = 0;
+                setProgressIndex(currentClass.id, activeQuizId, 0);
             }
 
             const q = currentQuiz.questions[appData.currentQuestionIndex];
@@ -2232,8 +2626,11 @@
         }
 
         function prevQuestion() {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            const activeQuizId = getActiveQuizIdForClass(currentClass);
             if (appData.currentQuestionIndex > 0) {
                 appData.currentQuestionIndex--;
+                if (currentClass && activeQuizId) setProgressIndex(currentClass.id, activeQuizId, appData.currentQuestionIndex);
                 appData.showAnswer = false;
                 resetAnswerVisibilityButton();
                 saveData();
@@ -2244,11 +2641,12 @@
 
         function nextQuestion() {
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
-            const activeQuizId = currentClass?.assignedQuizId || appData.selectedQuizId || appData.quizzes[0]?.id;
+            const activeQuizId = getActiveQuizIdForClass(currentClass);
             const currentQuiz = appData.quizzes.find(q => q.id === activeQuizId);
 
             if (currentQuiz && appData.currentQuestionIndex < currentQuiz.questions.length - 1) {
                 appData.currentQuestionIndex++;
+                if (currentClass && activeQuizId) setProgressIndex(currentClass.id, activeQuizId, appData.currentQuestionIndex);
                 appData.showAnswer = false;
                 resetAnswerVisibilityButton();
                 saveData();
@@ -2277,8 +2675,10 @@
                 return;
             }
 
+            const quizId = getActiveQuizIdForClass(currentClass);
+            const bucket = getResponsesBucket(currentClass.id, quizId, false) || {};
             const qIdx = appData.currentQuestionIndex;
-            const currentResponses = appData.responses[qIdx] || {};
+            const currentResponses = bucket[qIdx] || {};
 
             currentClass.students.forEach(s => {
                 const scannedOption = currentResponses[s.cardId];
@@ -2301,19 +2701,24 @@
                 return;
             }
 
+            const quizId = getActiveQuizIdForClass(currentClass);
+            if (!quizId) { alert('Lớp này chưa được giao bài tập nào!'); return; }
+            const bucket = getResponsesBucket(currentClass.id, quizId, true);
+
             const randomStudent = currentClass.students[Math.floor(Math.random() * currentClass.students.length)];
             const options = ['A', 'B', 'C', 'D'];
             const randomOption = options[Math.floor(Math.random() * options.length)];
 
             const qIdx = appData.currentQuestionIndex;
-            if (!appData.responses[qIdx]) appData.responses[qIdx] = {};
-            appData.responses[qIdx][randomStudent.cardId] = randomOption;
+            if (!bucket[qIdx]) bucket[qIdx] = {};
+            bucket[qIdx][randomStudent.cardId] = randomOption;
 
             sendScanResultToPC(randomStudent.cardId, randomOption, qIdx);
 
             playBeepSound();
             saveData();
             renderCardStatusGrid();
+            renderClassQuizResultsList();
         }
 
         // ==================== KHỞI TẠO VÀ IN 50 THẺ QR (A4) ====================
@@ -2353,17 +2758,17 @@
                 const card2Id = page * 2 + 2;
 
                 tempHolder.innerHTML = '';
-                new QRCode(tempHolder, { text: `CARD_${card1Id}`, width: 350, height: 350, correctLevel: QRCode.CorrectLevel.H });
+                new QRCode(tempHolder, { text: `CARD_${card1Id}`, width: 700, height: 700, correctLevel: QRCode.CorrectLevel.H });
                 const qrImg1 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
 
                 tempHolder.innerHTML = '';
-                new QRCode(tempHolder, { text: `CARD_${card2Id}`, width: 350, height: 350, correctLevel: QRCode.CorrectLevel.H });
+                new QRCode(tempHolder, { text: `CARD_${card2Id}`, width: 700, height: 700, correctLevel: QRCode.CorrectLevel.H });
                 const qrImg2 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
 
                 container.innerHTML += `
                     <div class="page-break flex flex-col justify-around items-center h-screen p-4 bg-white">
                         ${renderSingleCardHTML(card1Id, qrImg1)}
-                        <hr class="w-full border-t-2 border-dashed border-gray-400 my-2">
+                        <hr class="w-full border-t-2 border-dashed border-gray-400 my-1">
                         ${renderSingleCardHTML(card2Id, qrImg2)}
                     </div>
                 `;
@@ -2371,26 +2776,25 @@
         }
 
         function renderSingleCardHTML(cardId, qrImgData) {
+            const cardFont = "font-family:'Times New Roman', Roboto, Arial, sans-serif;";
+            const letterStyle = `font-size:18pt; font-weight:700; line-height:1; ${cardFont}`;
             return `
-                <div class="w-[190mm] h-[130mm] border-4 border-black rounded-3xl p-4 flex flex-col justify-between items-center bg-white text-black font-sans relative shadow-none">
-                    <div class="w-full flex justify-between items-center border-b-4 border-black pb-2">
-                        <span class="text-3xl font-black uppercase tracking-wider">THẺ TRẮC NGHIỆM PRO</span>
-                        <span class="text-4xl font-black bg-black text-white px-4 py-1 rounded-2xl">#${cardId}</span>
+                <div class="w-[190mm] h-[130mm] p-3 flex flex-col justify-between items-center bg-white text-black relative" style="${cardFont}">
+                    <div class="w-full flex justify-between items-center pb-1.5" style="border-bottom:1.5px solid #000;">
+                        <span style="font-size:14pt; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; ${cardFont}">THẺ TRẮC NGHIỆM PRO</span>
+                        <span style="font-size:16pt; font-weight:900; background:#000; color:#fff; padding:2px 14px; border-radius:10px; ${cardFont}">#${cardId}</span>
                     </div>
 
-                    <div class="relative w-full flex-1 flex items-center justify-center my-2">
-                        <span class="absolute top-0 font-black text-6xl tracking-widest text-black">A</span>
-                        <span class="absolute right-0 font-black text-6xl tracking-widest text-black">B</span>
-                        <span class="absolute bottom-0 font-black text-6xl tracking-widest text-black">C</span>
-                        <span class="absolute left-0 font-black text-6xl tracking-widest text-black">D</span>
-
-                        <div class="p-3 border-4 border-black rounded-2xl bg-white">
-                            <img src="${qrImgData}" class="w-[65mm] h-[65mm] object-contain">
-                        </div>
+                    <div class="relative w-full flex-1 flex items-center justify-center">
+                        <span class="absolute" style="top:1mm; ${letterStyle}">A</span>
+                        <span class="absolute" style="right:8mm; ${letterStyle}">B</span>
+                        <span class="absolute" style="bottom:1mm; ${letterStyle}">C</span>
+                        <span class="absolute" style="left:8mm; ${letterStyle}">D</span>
+                        <img src="${qrImgData}" style="width:94mm; height:94mm; object-fit:contain;">
                     </div>
 
-                    <div class="w-full flex justify-between items-center border-t-2 border-gray-400 pt-2 text-xs font-bold text-gray-700">
-                        <span>Xoay hướng chữ cái (A/B/C/D) lên trên để chọn đáp án</span>
+                    <div class="w-full flex justify-between items-center pt-1.5 text-gray-700" style="border-top:1px solid #999; font-size:9pt; ${cardFont}">
+                        <span>Xoay chữ cái (A/B/C/D) lên trên để chọn đáp án</span>
                         <span>Camera Auto-Focus 10M</span>
                     </div>
                 </div>
