@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUÉT NHANH TRẮC NGHIỆM PRO - AUTOFOCUS 10M</title>
+    <title>QUICK SCAN QUIZ PRO - AUTOFOCUS 10M</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
@@ -53,12 +53,14 @@
             }
         }
 
-        /* STYLE PHÔNG CHỮ TV 43 INCH */
+        /* STYLE PHÔNG CHỮ TV 43 INCH (TỐI ƯU CHIỀU CAO CHO CÂU HỎI HIỂN THỊ ĐẦY ĐỦ) */
         #live-options-grid {
-            grid-template-rows: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, auto));
         }
         .answer-option-card {
-            min-height: 0;
+            min-height: auto;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
         
@@ -69,16 +71,15 @@
         .answer-text {
             font-size: clamp(1.8rem, 5vh, 3.5rem);
             display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .live-question-text {
-            font-size: clamp(1.8rem, 5vh, 3.5rem);
-            display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+        /* Bỏ giới hạn cắt dòng để hiển thị trọn vẹn toàn bộ câu hỏi dài */
+        .live-question-text {
+            font-size: clamp(1.8rem, 5vh, 3.5rem);
+            display: block;
+            overflow: visible;
         }
 
         ::-webkit-scrollbar {
@@ -185,7 +186,7 @@
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-qrcode text-amber-400 text-2xl animate-spin" style="animation-duration: 8s;"></i>
                 <h1 class="font-black text-xl tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-300">
-                    QUÉT NHANH TRẮC NGHIỆM <span class="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full ml-1">PRO</span>
+                    QUICK SCAN QUIZ <span class="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full ml-1">PRO</span>
                 </h1>
             </div>
             
@@ -207,10 +208,7 @@
                     <button onclick="toggleFullscreen()" class="btn-3d px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-amber-400 border border-slate-700">
                         <i class="fa-solid fa-expand mr-1"></i>Toàn màn hình
                     </button>
-                    <button onclick="switchTab('classes')" id="tab-classes" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800"><i class="fa-solid fa-users mr-1"></i>Lớp học</button>
-                    <button onclick="switchTab('quizzes')" id="tab-quizzes" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800"><i class="fa-solid fa-layer-group mr-1"></i>Soạn Bài Test</button>
-                    <button onclick="switchTab('presentation')" id="tab-presentation" class="btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950"><i class="fa-solid fa-desktop mr-1"></i>Trình chiếu Live</button>
-                    <button onclick="openPrintModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800 border border-slate-700"><i class="fa-solid fa-print mr-1"></i>In Thẻ QR (A4)</button>
+                    <button onclick="switchTab('classes')" id="tab-classes" class="btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950"><i class="fa-solid fa-users mr-1"></i>Lớp học</button>
                 </nav>
             </div>
         </div>
@@ -218,14 +216,21 @@
 
     <main class="max-w-[1920px] w-full mx-auto p-2.5 flex-1 min-h-0 overflow-hidden">
 
-        <!-- TAB 1: QUẢN LÝ LỚP HỌC -->
-        <section id="view-classes" class="hidden h-full overflow-y-auto space-y-3 pr-1">
-            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl">
+        <!-- TAB 1: QUẢN LÝ LỚP HỌC (TÍCH HỢP ĐẦY ĐỦ SOẠN BÀI TEST, IN THẺ, NÚT TRÌNH CHIẾU LIVE) -->
+        <section id="view-classes" class="h-full overflow-y-auto space-y-3 pr-1">
+            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl flex-wrap gap-2">
                 <div>
                     <h2 class="text-xl font-extrabold text-amber-400">Quản lý Lớp học & Học sinh</h2>
                     <p class="text-slate-400 text-xs">Xuất / Nhập file Lớp học JSON, chọn bài test, lên lịch kiểm tra và nhập học sinh từ Excel/Word.</p>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex space-x-2 flex-wrap gap-y-2">
+                    <button onclick="switchTab('quizzes')" class="btn-3d bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
+                        <i class="fa-solid fa-layer-group mr-1.5"></i>Soạn Bài Test
+                    </button>
+                    <button onclick="openPrintModal()" class="btn-3d bg-slate-800 border border-slate-700 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center">
+                        <i class="fa-solid fa-print mr-1.5"></i>In Thẻ QR (A4)
+                    </button>
+
                     <input type="file" id="import-class-json-input" accept=".json" class="hidden" onchange="importClassesJSON(event)">
                     <button onclick="document.getElementById('import-class-json-input').click()" class="btn-3d bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-file-arrow-up mr-1.5"></i>Nhập Lớp (JSON)
@@ -235,7 +240,7 @@
                     </button>
                     
                     <input type="file" id="import-file-input" accept=".docx, .xlsx, .xls" class="hidden" onchange="handleFileImport(event)">
-                    <button onclick="document.getElementById('import-file-input').click()" class="btn-3d bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
+                    <button onclick="document.getElementById('import-file-input').click()" class="btn-3d bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-file-import mr-1.5"></i>Nhập Word / Excel
                     </button>
                     <button onclick="addClass()" class="btn-3d bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
@@ -262,8 +267,8 @@
                         </div>
                         <div id="class-quiz-checklist" class="flex flex-wrap gap-2"></div>
 
-                        <div class="flex items-center space-x-2 border-t border-slate-800 pt-3">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Đang trình chiếu:</span>
+                        <div class="flex items-center space-x-2 border-t border-slate-800 pt-3 flex-wrap gap-y-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Đang chọn chiếu:</span>
                             <i class="fa-solid fa-book-open text-amber-400 text-sm"></i>
                             <select id="select-quiz-for-class" onchange="setActiveQuizForClass(this.value)" class="font-bold text-slate-900 bg-amber-400 border border-amber-300 rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer flex-1">
                             </select>
@@ -277,12 +282,12 @@
                                 <input type="time" id="class-schedule-time" onchange="updateClassSchedule()" class="border border-slate-700 rounded-lg p-1 text-xs outline-none bg-slate-900 text-white">
                             </div>
                             <button onclick="resetClassResults()" class="btn-3d text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl flex items-center shadow-lg">
-                                <i class="fa-solid fa-rotate-left mr-1.5"></i>Reset Kết Quả Quét (bài đang trình chiếu)
+                                <i class="fa-solid fa-rotate-left mr-1.5"></i>Reset Kết Quả Quét (bài đang chọn)
                             </button>
                         </div>
 
                         <div class="border-t border-slate-800 pt-3">
-                            <h4 class="text-xs font-bold text-amber-400 mb-2 flex items-center"><i class="fa-solid fa-chart-simple mr-1.5"></i>Kết quả theo từng bài đã giao (Trích xuất trực tiếp tại đây)</h4>
+                            <h4 class="text-xs font-bold text-amber-400 mb-2 flex items-center"><i class="fa-solid fa-chart-simple mr-1.5"></i>Các bài kiểm tra đã giao & Trình chiếu Live</h4>
                             <div id="class-quiz-results-list" class="space-y-1.5"></div>
                         </div>
                     </div>
@@ -319,6 +324,9 @@
                     <p class="text-slate-400 text-xs">Tạo danh sách các Bài Test khác nhau và thêm câu hỏi tương ứng.</p>
                 </div>
                 <div class="flex space-x-2">
+                    <button onclick="switchTab('classes')" class="btn-3d bg-slate-800 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center border border-slate-700">
+                        <i class="fa-solid fa-arrow-left mr-1.5"></i>Quay lại Quản lý Lớp
+                    </button>
                     <input type="file" id="import-quiz-file" accept=".json" class="hidden" onchange="importQuizzesJSON(event)">
                     <button onclick="document.getElementById('import-quiz-file').click()" class="btn-3d bg-amber-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-file-arrow-up mr-1.5"></i>Mở Bài Test (JSON)
@@ -355,13 +363,16 @@
         </section>
 
         <!-- TAB 3: TRÌNH CHIẾU LIVE & QUÉT CAMERA -->
-        <section id="view-presentation" class="h-full flex flex-col min-h-0">
+        <section id="view-presentation" class="hidden h-full flex flex-col min-h-0">
             <div class="grid grid-cols-12 gap-3 h-full min-h-0">
                 
-                <div class="col-span-9 bg-slate-900 rounded-3xl border-2 border-slate-800 p-4 flex flex-col justify-between h-full min-h-0 overflow-hidden shadow-2xl relative">
-                    <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div class="col-span-9 bg-slate-900 rounded-3xl border-2 border-slate-800 p-4 flex flex-col justify-between h-full min-h-0 overflow-y-auto shadow-2xl relative">
+                    <div class="flex flex-col flex-1 min-h-0">
                         <div class="flex justify-between items-center mb-2 flex-none">
                             <div class="flex items-center space-x-3">
+                                <button onclick="switchTab('classes')" class="btn-3d text-xs bg-slate-800 text-amber-400 font-bold px-3 py-1.5 rounded-xl border border-slate-700">
+                                    <i class="fa-solid fa-arrow-left mr-1"></i>Về Lớp Học
+                                </button>
                                 <span id="live-question-number" class="bg-amber-400 text-slate-950 text-sm font-black px-4 py-1.5 rounded-full shadow-lg">Câu 1 / 2</span>
                                 <span id="live-quiz-title" class="bg-slate-800 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full border border-slate-700"><i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>Bài Test</span>
                                 <select id="live-quiz-switcher" onchange="setActiveQuizForClass(this.value)" class="hidden font-bold text-slate-900 bg-amber-300 border border-amber-300 rounded-full px-3 py-1.5 text-xs outline-none cursor-pointer">
@@ -384,7 +395,8 @@
                             </div>
                         </div>
 
-                        <h2 id="live-question-text" class="live-question-text font-black text-amber-300 my-2 leading-snug flex-none">Đang tải câu hỏi...</h2>
+                        <!-- CÂU HỎI TRÌNH CHIẾU DÀI ĐƯỢC HIỂN THỊ ĐẦY ĐỦ TỰ DO NỘI DUNG -->
+                        <h2 id="live-question-text" class="live-question-text font-black text-amber-300 my-2 leading-snug">Đang tải câu hỏi...</h2>
 
                         <div id="live-audio-container" class="my-1.5 hidden bg-slate-950 p-2 rounded-2xl border border-slate-800 flex items-center space-x-3 flex-none">
                             <i class="fa-solid fa-volume-high text-amber-400 text-2xl animate-bounce"></i>
@@ -398,7 +410,7 @@
                         <div id="live-options-grid" class="grid grid-cols-2 gap-3 flex-1 min-h-0 my-2"></div>
                     </div>
 
-                    <div class="flex justify-between items-center pt-3 border-t border-slate-800 mt-1 flex-none">
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-800 mt-2 flex-none">
                         <button onclick="prevQuestion()" class="btn-3d bg-slate-800 hover:bg-slate-700 text-white font-black px-6 py-2 rounded-2xl flex items-center text-sm">
                             <i class="fa-solid fa-arrow-left mr-2"></i>Câu trước
                         </button>
@@ -740,15 +752,6 @@
                     initRealtimeSync();
                     renderClasses();
                     updateAuthUI();
-                    renderPresentation();
-                    ['classes', 'quizzes', 'presentation'].forEach(t => {
-                        const tabBtn = document.getElementById(`tab-${t}`);
-                        if (tabBtn) {
-                            tabBtn.className = t === 'presentation'
-                                ? "btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950"
-                                : "btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800";
-                        }
-                    });
                 } catch (err) {
                     console.error('Lỗi khởi tạo:', err);
                 }
@@ -1315,7 +1318,6 @@
                     migrateAppData();
                     if (!isPhoneScannerMode) {
                         renderClasses();
-                        renderPresentation();
                     }
                 } else {
                     currentUser = null;
@@ -1487,7 +1489,7 @@
 
                     currentUser = displayName || email;
                     showAuthMessage('success', 'Đăng ký thành công!');
-                    setTimeout(() => { closeAuthModal(); updateAuthUI(); renderClasses(); renderPresentation(); }, 600);
+                    setTimeout(() => { closeAuthModal(); updateAuthUI(); renderClasses(); }, 600);
                 } else {
                     await firebaseAuth.signInWithEmailAndPassword(email, password);
                     currentUser = firebaseAuth.currentUser.displayName || email;
@@ -1510,8 +1512,7 @@
             appData = getDefaultAppData();
             updateAuthUI();
             renderClasses();
-            renderPresentation();
-            switchTab('presentation');
+            switchTab('classes');
         }
 
         function toggleFullscreen() {
@@ -1581,15 +1582,25 @@
         function switchTab(tab) {
             ['classes', 'quizzes', 'presentation'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = "btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800";
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) btn.className = "btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800";
             });
 
             document.getElementById(`view-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).className = "btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950";
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) activeBtn.className = "btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950";
 
             if (tab === 'presentation') renderPresentation();
             else if (tab === 'quizzes') renderQuizzesView();
             else if (tab === 'classes') renderClasses();
+        }
+
+        function startPresentationForQuiz(quizId) {
+            const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
+            if (!currentClass) return;
+            currentClass.activeQuizId = quizId;
+            saveData();
+            switchTab('presentation');
         }
 
         function exportClassesJSON() {
@@ -1656,13 +1667,13 @@
             const selectClassQuiz = document.getElementById('select-quiz-for-class');
             const selectActiveQuiz = document.getElementById('select-active-quiz');
             const checklist = document.getElementById('class-quiz-checklist');
-            if (!selectActiveQuiz) return;
-
-            selectActiveQuiz.innerHTML = '';
-            appData.quizzes.forEach(q => {
-                selectActiveQuiz.innerHTML += `<option value="${q.id}">${q.title} (${q.questions.length} câu)</option>`;
-            });
-            selectActiveQuiz.value = appData.selectedQuizId;
+            if (selectActiveQuiz) {
+                selectActiveQuiz.innerHTML = '';
+                appData.quizzes.forEach(q => {
+                    selectActiveQuiz.innerHTML += `<option value="${q.id}">${q.title} (${q.questions.length} câu)</option>`;
+                });
+                selectActiveQuiz.value = appData.selectedQuizId;
+            }
 
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!selectClassQuiz || !checklist) return;
@@ -1719,7 +1730,6 @@
             }
             saveData();
             renderQuizDropdowns();
-            renderPresentation();
         }
 
         function setActiveQuizForClass(quizId) {
@@ -1728,7 +1738,6 @@
             currentClass.activeQuizId = quizId;
             saveData();
             renderQuizDropdowns();
-            renderPresentation();
         }
 
         function renderClassQuizResultsList() {
@@ -1739,7 +1748,7 @@
 
             const assignedIds = Array.isArray(currentClass.assignedQuizIds) ? currentClass.assignedQuizIds : [];
             if (assignedIds.length === 0) {
-                container.innerHTML = `<span class="text-xs text-slate-500">Lớp này chưa được giao bài tập nào.</span>`;
+                container.innerHTML = `<span class="text-xs text-slate-500">Lớp này chưa được chọn bài kiểm tra nào. Tích chọn ở danh sách phía trên để giao bài!</span>`;
                 return;
             }
 
@@ -1752,14 +1761,19 @@
                 const totalStudents = (currentClass.students || []).length;
                 const isActive = getActiveQuizIdForClass(currentClass) === qid;
                 return `
-                    <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
+                    <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex-wrap gap-2">
                         <div class="min-w-0 flex-1">
-                            <span class="text-xs font-bold text-slate-200 truncate block">${quiz.title} ${isActive ? '<span class="ml-1 text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-black">ĐANG CHIẾU</span>' : ''}</span>
-                            <span class="text-[10px] text-slate-500">Đã quét: ${scannedCardIds.size}/${totalStudents} học sinh (ít nhất 1 câu)</span>
+                            <span class="text-xs font-bold text-slate-200 truncate block">${quiz.title} ${isActive ? '<span class="ml-1 text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-black">ĐANG ĐƯỢC CHỌN</span>' : ''}</span>
+                            <span class="text-[10px] text-slate-500">Đã quét: ${scannedCardIds.size}/${totalStudents} học sinh</span>
                         </div>
-                        <button onclick="exportResultsCSVFor('${currentClass.id}', '${qid}')" class="btn-3d text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center flex-none ml-2">
-                            <i class="fa-solid fa-file-excel mr-1"></i>Xuất kết quả
-                        </button>
+                        <div class="flex items-center space-x-1.5 flex-none">
+                            <button onclick="startPresentationForQuiz('${qid}')" class="btn-3d text-[11px] bg-amber-400 hover:bg-amber-500 text-slate-950 font-black px-3 py-1.5 rounded-lg flex items-center shadow-md">
+                                <i class="fa-solid fa-desktop mr-1.5"></i>Trình chiếu Live
+                            </button>
+                            <button onclick="exportResultsCSVFor('${currentClass.id}', '${qid}')" class="btn-3d text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center">
+                                <i class="fa-solid fa-file-excel mr-1"></i>Xuất Excel
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -2224,7 +2238,7 @@
             const currentClass = appData.classes.find(c => c.id === appData.selectedClassId);
             if (!currentClass) return alert("Vui lòng chọn lớp!");
             const activeQuizId = getActiveQuizIdForClass(currentClass);
-            if (!activeQuizId) return alert("Lớp này chưa được giao bài tập nào để trình chiếu!");
+            if (!activeQuizId) return alert("Lớp này chưa được chọn bài tập nào để trình chiếu!");
             exportResultsCSVFor(currentClass.id, activeQuizId);
         }
 
@@ -2518,7 +2532,7 @@
 
             if (!currentClass || assignedIds.length === 0) {
                 if (qNumEl) qNumEl.innerText = 'Câu 0 / 0';
-                if (qTextEl) qTextEl.innerText = 'Lớp này chưa được giao bài tập nào. Vui lòng vào Tab "Lớp học" để chọn bài tập cho phép trình chiếu!';
+                if (qTextEl) qTextEl.innerText = 'Lớp này chưa được chọn bài tập nào. Vui lòng quay lại Tab "Lớp học" để chọn bài kiểm tra!';
                 if (optionsGrid) optionsGrid.innerHTML = '';
                 if (imgContainer) imgContainer.classList.add('hidden');
                 if (audioContainer) audioContainer.classList.add('hidden');
@@ -2528,7 +2542,7 @@
 
             if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
                 if (qNumEl) qNumEl.innerText = 'Câu 0 / 0';
-                if (qTextEl) qTextEl.innerText = 'Bài test chưa có câu hỏi nào. Vui lòng chuyển sang Tab "Soạn Bài Test" để thêm câu hỏi!';
+                if (qTextEl) qTextEl.innerText = 'Bài test chưa có câu hỏi nào. Vui lòng bấm nút "Soạn Bài Test" để thêm câu hỏi!';
                 if (optionsGrid) optionsGrid.innerHTML = '';
                 if (imgContainer) imgContainer.classList.add('hidden');
                 if (audioContainer) audioContainer.classList.add('hidden');
@@ -2682,7 +2696,7 @@
             }
 
             const quizId = getActiveQuizIdForClass(currentClass);
-            if (!quizId) { alert('Lớp này chưa được giao bài tập nào!'); return; }
+            if (!quizId) { alert('Lớp này chưa được chọn bài tập nào!'); return; }
             const bucket = getResponsesBucket(currentClass.id, quizId, true);
 
             const randomStudent = currentClass.students[Math.floor(Math.random() * currentClass.students.length)];
@@ -2765,7 +2779,7 @@
             return `
                 <div class="w-[190mm] h-[130mm] p-3 flex flex-col justify-between items-center bg-white text-black relative" style="${cardFont}">
                     <div class="w-full flex justify-between items-center pb-1.5" style="border-bottom:1.5px solid #000;">
-                        <span style="font-size:14pt; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; ${cardFont}">THẺ TRẮC NGHIỆM PRO</span>
+                        <span style="font-size:14pt; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; ${cardFont}">QUICK SCAN QUIZ PRO</span>
                         <span style="font-size:16pt; font-weight:900; background:#000; color:#fff; padding:2px 14px; border-radius:10px; ${cardFont}">#${cardId}</span>
                     </div>
 
