@@ -27,7 +27,7 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 background: white !important;
-                height: 100% !important;
+                height: auto !important;
                 overflow: visible !important;
             }
             body * { visibility: hidden !important; }
@@ -41,8 +41,8 @@
                 background: white !important;
             }
             .page-break { 
-                page-break-after: always; 
-                break-after: page; 
+                page-break-after: always !important; 
+                break-after: page !important; 
                 height: 297mm !important;
                 box-sizing: border-box;
                 display: flex !important;
@@ -210,7 +210,7 @@
                     <button onclick="switchTab('classes')" id="tab-classes" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800"><i class="fa-solid fa-users mr-1"></i>Lớp học</button>
                     <button onclick="switchTab('quizzes')" id="tab-quizzes" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800"><i class="fa-solid fa-layer-group mr-1"></i>Soạn Bài Test</button>
                     <button onclick="switchTab('presentation')" id="tab-presentation" class="btn-3d px-3 py-1.5 rounded-xl font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950"><i class="fa-solid fa-desktop mr-1"></i>Trình chiếu Live</button>
-                    <button onclick="openPrintModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800 border border-slate-700"><i class="fa-solid fa-print mr-1"></i>In 50 Thẻ QR (A4)</button>
+                    <button onclick="openPrintModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold bg-slate-800 border border-slate-700"><i class="fa-solid fa-print mr-1"></i>In Thẻ QR (A4)</button>
                 </nav>
             </div>
         </div>
@@ -623,12 +623,19 @@
     <!-- PRINT MODAL -->
     <div id="print-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50">
         <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3">
-            <h3 class="text-base font-black text-amber-400">In 50 Thẻ QR-Code Trắc Nghiệm (A4)</h3>
+            <h3 class="text-base font-black text-amber-400">In Thẻ QR-Code Trắc Nghiệm (A4)</h3>
             <p class="text-slate-300 text-xs leading-relaxed">
-                Tự động khởi tạo 50 thẻ mã hóa QR Code trung tâm dàn trên 25 trang A4. Khổ thẻ siêu rõ nét giúp Camera Điện thoại quét xa đến 10 mét.
+                Nhập số lượng trang A4 bạn muốn xuất (mỗi trang A4 chứa 2 thẻ siêu rõ nét giúp Camera Điện thoại quét xa đến 10 mét).
             </p>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-amber-300">Số trang A4 muốn in:</label>
+                <input type="number" id="print-pages-count" min="1" max="1000" value="25" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-amber-400 font-bold">
+                <p class="text-[10px] text-slate-400">* Mặc định 25 trang = 50 thẻ. Có thể nhập tới 1000 trang (2000 thẻ).</p>
+            </div>
+
             <div id="print-loading" class="hidden text-amber-400 font-bold text-xs text-center py-1">
-                <i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tự động tạo 50 ảnh thẻ...
+                <i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang khởi tạo danh sách ảnh thẻ...
             </div>
             <div class="flex justify-end space-x-2 pt-2">
                 <button onclick="closePrintModal()" class="btn-3d px-4 py-1.5 rounded-xl font-bold text-slate-400 text-xs">Hủy</button>
@@ -703,7 +710,7 @@
         const scanCooldownMap = new Map();
         const SCAN_COOLDOWN_MS = 1200;
 
-        // Điều tiết tần suất xử lý khung hình (giữ mượt máy yếu khi quét lưới đa vùng)
+        // Điều tiết tần suất xử lý khung hình
         const SCAN_FRAME_INTERVAL_MS = 90;
         let lastLaptopScanTs = 0;
         let lastPhoneScanTs = 0;
@@ -766,7 +773,9 @@
                 const pcPeerId = 'QUET_TN_PC_' + syncRoomId;
                 
                 if (isPhoneScannerMode) {
-                    peer = new Peer();
+                    peer = new Peer({
+                        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
+                    });
                     peer.on('open', function(id) {
                         document.getElementById('phone-conn-status').innerText = 'Đang kết nối tới Laptop...';
                         peerConn = peer.connect(pcPeerId);
@@ -789,7 +798,9 @@
                         });
                     });
                 } else {
-                    peer = new Peer(pcPeerId);
+                    peer = new Peer(pcPeerId, {
+                        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
+                    });
                     peer.on('open', function(id) {
                         updateSyncUIState(true);
                     });
@@ -925,7 +936,6 @@
                 });
         }
 
-        // Bật điều khiển Zoom quang học/số + Đèn Flash nếu thiết bị hỗ trợ (giúp quét rõ nét ở khoảng cách xa 10m)
         function setupPhoneCameraControls(stream) {
             try {
                 const track = stream.getVideoTracks()[0];
@@ -976,7 +986,7 @@
             }
         }
 
-        // ==================== QUÉT ĐA THẺ NÂNG CAO: CHIA LƯỚI ĐỘ PHÂN GIẢI CAO ĐỂ QUÉT NHIỀU THẺ CÙNG LÚC Ở KHOẢNG CÁCH XA (≤10M) ====================
+        // ==================== QUÉT ĐA THẺ NÂNG CAO ====================
         function detectMultipleQRCodes(imageData) {
             const results = new Map();
             const w = imageData.width;
@@ -1011,7 +1021,6 @@
                 return false;
             };
 
-            // 1) Quét toàn khung hình trước (nhanh, bắt thẻ gần/rõ)
             tryScan(imageData);
 
             const enhanced1 = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
@@ -1022,11 +1031,9 @@
             enhanceImageForDistance(enhanced2, 2.8, 100);
             tryScan(enhanced2);
 
-            // 2) LƯỚI 4x3 CHỒNG LẤN (đa nhiệm): mỗi ô được xử lý như một "khung hình phóng to"
-            // giúp jsQR dò được các thẻ nhỏ / ở xa nằm rải rác nhiều nơi trong khung hình rộng.
             const srcData = imageData.data;
             const gridCols = 4, gridRows = 3;
-            const tileWFrac = 0.34, tileHFrac = 0.40; // mỗi ô ~1/3 khung, chồng lấn ~15-20%
+            const tileWFrac = 0.34, tileHFrac = 0.40;
             const gridRois = [];
             for (let r = 0; r < gridRows; r++) {
                 for (let cIdx = 0; cIdx < gridCols; cIdx++) {
@@ -1047,20 +1054,6 @@
                     enhanceImageForDistance(roiImg, 2.3, 112);
                     tryScan(roiImg);
                 }
-            });
-
-            // 3) 5 vùng lớn phủ góc + trung tâm (bổ trợ cho thẻ nằm vắt giữa các ô lưới)
-            const cornerRois = [
-                { x: 0, y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.45), y: 0, rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: 0, y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.45), y: Math.floor(h * 0.45), rw: Math.floor(w * 0.55), rh: Math.floor(h * 0.55) },
-                { x: Math.floor(w * 0.2), y: Math.floor(h * 0.2), rw: Math.floor(w * 0.6), rh: Math.floor(h * 0.6) }
-            ];
-
-            cornerRois.forEach(roi => {
-                const roiImg = extractROI(srcData, roi);
-                tryScan(roiImg);
             });
 
             return Array.from(results.values());
@@ -1164,9 +1157,9 @@
             document.getElementById('sync-modal').classList.remove('flex');
         }
 
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG CHÍNH THỨC
         const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
+            apiKey: "AIzaSyDpx2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
             authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
             projectId: "quet-nhanh-trac-nghiem",
             storageBucket: "quet-nhanh-trac-nghiem.firebasestorage.app",
@@ -1253,7 +1246,6 @@
             };
         }
 
-        // ==================== HỖ TRỢ: BÀI TẬP GIAO CHO LỚP (NHIỀU BÀI) & KẾT QUẢ THEO TỪNG LỚP/BÀI ====================
         function migrateAppData() {
             if (!appData.progress) appData.progress = {};
             if (!appData.responses) appData.responses = {};
@@ -1267,7 +1259,6 @@
                 }
             });
 
-            // Phát hiện dữ liệu quét cũ (định dạng phẳng: responses[questionIndex][cardId]) và chuyển vào lớp/bài đang chọn
             const respKeys = Object.keys(appData.responses);
             const looksFlat = respKeys.length > 0 && respKeys.every(k => /^\d+$/.test(k));
             if (looksFlat) {
@@ -1416,7 +1407,6 @@
                 : 'Chưa có tài khoản? Đăng ký ngay';
         }
 
-        // BẢN DỊCH LỖI FIREBASE SANG TIẾNG VIỆT DỄ HIỂU
         const FIREBASE_ERROR_MESSAGES = {
             'auth/invalid-credential': 'Sai Email hoặc Mật khẩu. Nếu bạn chưa có tài khoản, hãy bấm "Chưa có tài khoản? Đăng ký ngay" bên dưới.',
             'auth/user-not-found': 'Email này chưa được đăng ký. Hãy bấm "Chưa có tài khoản? Đăng ký ngay" để tạo tài khoản mới.',
@@ -1428,24 +1418,21 @@
             'auth/too-many-requests': 'Bạn đã thử sai quá nhiều lần. Vui lòng đợi vài phút rồi thử lại, hoặc bấm "Quên mật khẩu?" để đặt lại.',
             'auth/network-request-failed': 'Lỗi kết nối mạng. Vui lòng kiểm tra Internet và thử lại.',
             'auth/missing-password': 'Vui lòng nhập mật khẩu.',
-            'auth/operation-not-allowed': 'Đăng nhập bằng Email/Mật khẩu chưa được bật cho ứng dụng này. Vui lòng liên hệ quản trị viên để bật trong Firebase Console (Authentication → Sign-in method → Email/Password).',
-            'auth/popup-closed-by-user': 'Cửa sổ đăng nhập đã bị đóng trước khi hoàn tất.',
-            'auth/internal-error': 'Lỗi hệ thống Firebase. Vui lòng thử lại sau ít phút.'
+            'auth/operation-not-allowed': 'Đăng nhập chưa được bật cho ứng dụng này.',
+            'auth/popup-closed-by-user': 'Cửa sổ đăng nhập đã bị đóng.',
+            'auth/internal-error': 'Lỗi hệ thống Firebase. Vui lòng thử lại sau.'
         };
 
         function translateFirebaseError(err) {
             if (!err) return 'Đã xảy ra lỗi không xác định.';
             const code = err.code || '';
             if (FIREBASE_ERROR_MESSAGES[code]) return FIREBASE_ERROR_MESSAGES[code];
-            if (code) return `Lỗi (${code}). Vui lòng kiểm tra lại Email/Mật khẩu hoặc thử lại sau.`;
+            if (code) return `Lỗi (${code}). Vui lòng kiểm tra lại.`;
             return err.message || 'Đã xảy ra lỗi không xác định.';
         }
 
         async function handleForgotPassword() {
-            if (!firebaseReady && !initFirebase()) {
-                alert('Chưa cấu hình Firebase hợp lệ.');
-                return;
-            }
+            if (!firebaseReady && !initFirebase()) return alert('Chưa cấu hình Firebase hợp lệ.');
             const emailInput = document.getElementById('auth-username');
             let email = (emailInput.value || '').trim().toLowerCase();
             if (!email) {
@@ -1454,7 +1441,7 @@
             if (!email) return;
             try {
                 await firebaseAuth.sendPasswordResetEmail(email);
-                showAuthMessage('success', `Đã gửi link đặt lại mật khẩu tới ${email}. Vui lòng kiểm tra hộp thư (kể cả mục Spam).`);
+                showAuthMessage('success', `Đã gửi link đặt lại mật khẩu tới ${email}. Vui lòng kiểm tra hộp thư.`);
             } catch (err) {
                 showAuthMessage('error', translateFirebaseError(err));
             }
@@ -1815,11 +1802,6 @@
             appData.selectedQuizId = quizId;
             saveData();
             renderQuestions();
-        }
-
-        function assignQuizToCurrentClass(quizId) {
-            // Giữ lại để tương thích ngược - nay dùng setActiveQuizForClass()
-            setActiveQuizForClass(quizId);
         }
 
         function updateClassSchedule() {
@@ -2246,7 +2228,6 @@
             exportResultsCSVFor(currentClass.id, activeQuizId);
         }
 
-        // Xuất kết quả cho ĐÚNG một cặp Lớp + Bài test (dùng ở cả trang Trình chiếu và trang Quản lý Lớp)
         function exportResultsCSVFor(classId, quizId) {
             const targetClass = appData.classes.find(c => c.id === classId);
             if (!targetClass) return alert("Không tìm thấy lớp học!");
@@ -2521,7 +2502,6 @@
 
             if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i>${currentQuiz ? currentQuiz.title : 'Chưa chọn bài test'}`;
 
-            // Nếu lớp được giao NHIỀU bài test, hiện dropdown để chuyển nhanh ngay tại màn hình trình chiếu
             const assignedIds = currentClass && Array.isArray(currentClass.assignedQuizIds) ? currentClass.assignedQuizIds : [];
             if (switcherEl) {
                 if (assignedIds.length > 1) {
@@ -2721,7 +2701,7 @@
             renderClassQuizResultsList();
         }
 
-        // ==================== KHỞI TẠO VÀ IN 50 THẺ QR (A4) ====================
+        // ==================== KHỞI TẠO VÀ IN THẺ QR (A4) LINH HOẠT ====================
         function openPrintModal() {
             document.getElementById('print-modal').classList.remove('hidden');
             document.getElementById('print-modal').classList.add('flex');
@@ -2733,13 +2713,17 @@
         }
 
         function triggerPrintProcess() {
+            const pageInput = document.getElementById('print-pages-count');
+            let pagesCount = parseInt(pageInput ? pageInput.value : '25', 10);
+            if (isNaN(pagesCount) || pagesCount < 1) pagesCount = 25;
+
             const loading = document.getElementById('print-loading');
             const btn = document.getElementById('btn-start-print');
             loading.classList.remove('hidden');
             btn.disabled = true;
 
             setTimeout(() => {
-                generatePrintableCards();
+                generatePrintableCards(pagesCount);
                 loading.classList.add('hidden');
                 btn.disabled = false;
                 closePrintModal();
@@ -2747,13 +2731,13 @@
             }, 300);
         }
 
-        function generatePrintableCards() {
+        function generatePrintableCards(totalPages = 25) {
             const container = document.getElementById('cards-container');
             container.innerHTML = '';
 
             const tempHolder = document.getElementById('qr-temp-holder');
 
-            for (let page = 0; page < 25; page++) {
+            for (let page = 0; page < totalPages; page++) {
                 const card1Id = page * 2 + 1;
                 const card2Id = page * 2 + 2;
 
