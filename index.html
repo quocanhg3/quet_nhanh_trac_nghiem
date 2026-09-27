@@ -659,6 +659,17 @@
     </div>
 
     <script>
+        // CẤU HÌNH FIREBASE CHÍNH XÁC (ĐÃ ĐỒNG BỘ TÊN BIẾN FIREBASE_CONFIG)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
+            authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
+            projectId: "quet-nhanh-trac-nghiem",
+            storageBucket: "quet-nhanh-trac-nghiem.firebasestorage.app",
+            messagingSenderId: "602826802314",
+            appId: "1:602826802314:web:54e986094670dc25aed973",
+            measurementId: "G-WXY687F7WL"
+        };
+
         // DỮ LIỆU BÀI TEST & ĐỒNG BỘ
         let appData = {
             classes: [
@@ -718,19 +729,40 @@
         let phoneVideoStream = null;
         let phoneScanAnimationId = null;
 
-        // Cooldown map để tránh quét trùng lặp nhanh (ms)
         const scanCooldownMap = new Map();
         const SCAN_COOLDOWN_MS = 1200;
 
-        // Điều tiết tần suất xử lý khung hình
         const SCAN_FRAME_INTERVAL_MS = 90;
         let lastLaptopScanTs = 0;
         let lastPhoneScanTs = 0;
         let currentZoomLevel = 1;
         let phoneCameraTrack = null;
 
+        let firebaseReady = false;
+        let firebaseAuth = null;
+        let firebaseDb = null;
+        let saveDataTimer = null;
+        let isLoadingCloudData = false;
+
+        function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined') return false;
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                }
+                firebaseAuth = firebase.auth();
+                firebaseDb = firebase.firestore();
+                firebaseReady = true;
+                return true;
+            } catch (e) {
+                console.error('Lỗi khởi tạo Firebase:', e);
+                return false;
+            }
+        }
+
         // BẮT THAM SỐ URL KHI ĐIỆN THOẠI QUÉT QR KẾT NỐI
         window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
             loadAuthSession();
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -758,7 +790,6 @@
             }
         });
 
-        // TÍCH HỢP ĐỒNG BỘ REALTIME INTERNET / WEBRTC PEERJS
         function initRealtimeSync() {
             try {
                 syncChannel = new BroadcastChannel('QUET_TRAC_NGHIEM_SYNC_' + syncRoomId);
@@ -904,7 +935,6 @@
             }
         }
 
-        // CHẾ ĐỘ CAMERA ĐIỆN THOẠI QUÉT XA 10M AUTOFOCUS
         function startPhoneHDCamera() {
             const video = document.getElementById('phone-qr-video');
             
@@ -989,7 +1019,6 @@
             }
         }
 
-        // ==================== QUÉT ĐA THẺ NÂNG CAO ====================
         function detectMultipleQRCodes(imageData) {
             const results = new Map();
             const w = imageData.width;
@@ -1158,39 +1187,6 @@
         function closeSyncModal() {
             document.getElementById('sync-modal').classList.add('hidden');
             document.getElementById('sync-modal').classList.remove('flex');
-        }
-
-        // CẤU HÌNH FIREBASE CHÍNH XÁC (ĐÃ SỬA LỖI API KEY)
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
-            authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
-            projectId: "quet-nhanh-trac-nghiem",
-            storageBucket: "quet-nhanh-trac-nghiem.firebasestorage.app",
-            messagingSenderId: "602826802314",
-            appId: "1:602826802314:web:54e986094670dc25aed973",
-            measurementId: "G-WXY687F7WL"
-        };
-
-        let firebaseReady = false;
-        let firebaseAuth = null;
-        let firebaseDb = null;
-        let saveDataTimer = null;
-        let isLoadingCloudData = false;
-
-        function initFirebase() {
-            try {
-                if (typeof firebase === 'undefined') return false;
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(FIREBASE_CONFIG);
-                }
-                firebaseAuth = firebase.auth();
-                firebaseDb = firebase.firestore();
-                firebaseReady = true;
-                return true;
-            } catch (e) {
-                console.error('Lỗi khởi tạo Firebase:', e);
-                return false;
-            }
         }
 
         const _memStore = {};
@@ -2715,7 +2711,6 @@
             renderClassQuizResultsList();
         }
 
-        // ==================== KHỞI TẠO VÀ IN THẺ QR (A4) LINH HOẠT ====================
         function openPrintModal() {
             document.getElementById('print-modal').classList.remove('hidden');
             document.getElementById('print-modal').classList.add('flex');
