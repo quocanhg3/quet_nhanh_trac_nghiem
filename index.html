@@ -75,7 +75,6 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        /* Bỏ giới hạn cắt dòng để hiển thị trọn vẹn toàn bộ câu hỏi dài */
         .live-question-text {
             font-size: clamp(1.8rem, 5vh, 3.5rem);
             display: block;
@@ -128,12 +127,6 @@
             transform: translateY(2px) scale(0.98) !important;
             box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important;
         }
-
-        .card-3d {
-            background: linear-gradient(145deg, #ffffff, #f1f5f9);
-            box-shadow: 8px 8px 20px #cbd5e1, -8px -8px 20px #ffffff;
-            border-radius: 1rem;
-        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
@@ -173,7 +166,7 @@
         </div>
 
         <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m + Quét đa điểm (nhiều thẻ cùng lúc) đang hoạt động. Tự động đồng bộ kết quả về Laptop.</p>
+            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m + Quét đa điểm đang hoạt động. Tự động đồng bộ kết quả về Laptop.</p>
             <button onclick="window.location.href=window.location.pathname" class="btn-3d w-full py-2 bg-rose-600 text-white font-bold rounded-xl text-xs">
                 Thoát chế độ quét điện thoại
             </button>
@@ -191,7 +184,12 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <button id="btn-sync-status" onclick="openSyncModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center">
+                <!-- NÚT LƯU VÀO TÀI KHOẢN TRỰC TIẾP -->
+                <button onclick="manualSaveToCloud()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center shadow-lg">
+                    <i class="fa-solid fa-cloud-arrow-up mr-1.5 text-amber-300"></i><span id="save-cloud-text">Lưu Vào Tài Khoản</span>
+                </button>
+
+                <button id="btn-sync-status" onclick="openSyncModal()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-800 border border-slate-700 text-white flex items-center">
                     <i class="fa-solid fa-mobile-screen mr-1.5 text-amber-300"></i><span id="sync-status-text">Kết Nối Điện Thoại Quét</span>
                 </button>
 
@@ -216,12 +214,12 @@
 
     <main class="max-w-[1920px] w-full mx-auto p-2.5 flex-1 min-h-0 overflow-hidden">
 
-        <!-- TAB 1: QUẢN LÝ LỚP HỌC (TÍCH HỢP ĐẦY ĐỦ SOẠN BÀI TEST, IN THẺ, NÚT TRÌNH CHIẾU LIVE) -->
+        <!-- TAB 1: QUẢN LÝ LỚP HỌC -->
         <section id="view-classes" class="h-full overflow-y-auto space-y-3 pr-1">
             <div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl flex-wrap gap-2">
                 <div>
                     <h2 class="text-xl font-extrabold text-amber-400">Quản lý Lớp học & Học sinh</h2>
-                    <p class="text-slate-400 text-xs">Xuất / Nhập file Lớp học JSON, chọn bài test, lên lịch kiểm tra và nhập học sinh từ Excel/Word.</p>
+                    <p class="text-slate-400 text-xs">Tự động đồng bộ lên tài khoản Firebase. Quản lý danh sách học sinh và gán bài test kiểm tra.</p>
                 </div>
                 <div class="flex space-x-2 flex-wrap gap-y-2">
                     <button onclick="switchTab('quizzes')" class="btn-3d bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
@@ -230,18 +228,10 @@
                     <button onclick="openPrintModal()" class="btn-3d bg-slate-800 border border-slate-700 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-print mr-1.5"></i>In Thẻ QR (A4)
                     </button>
-
-                    <input type="file" id="import-class-json-input" accept=".json" class="hidden" onchange="importClassesJSON(event)">
-                    <button onclick="document.getElementById('import-class-json-input').click()" class="btn-3d bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-file-arrow-up mr-1.5"></i>Nhập Lớp (JSON)
-                    </button>
-                    <button onclick="exportClassesJSON()" class="btn-3d bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Lưu Lớp (JSON)
-                    </button>
                     
                     <input type="file" id="import-file-input" accept=".docx, .xlsx, .xls" class="hidden" onchange="handleFileImport(event)">
                     <button onclick="document.getElementById('import-file-input').click()" class="btn-3d bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-file-import mr-1.5"></i>Nhập Word / Excel
+                        <i class="fa-solid fa-file-import mr-1.5"></i>Nhập Học Sinh (Word / Excel)
                     </button>
                     <button onclick="addClass()" class="btn-3d bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-plus mr-1.5"></i>Thêm Lớp Mới
@@ -321,18 +311,11 @@
             <div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl">
                 <div>
                     <h2 class="text-xl font-extrabold text-amber-400">Quản lý Bài Test & Soạn Câu hỏi</h2>
-                    <p class="text-slate-400 text-xs">Tạo danh sách các Bài Test khác nhau và thêm câu hỏi tương ứng.</p>
+                    <p class="text-slate-400 text-xs">Tạo các bài kiểm tra mới và soạn câu hỏi trực tiếp trên tài khoản của bạn.</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="switchTab('classes')" class="btn-3d bg-slate-800 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center border border-slate-700">
                         <i class="fa-solid fa-arrow-left mr-1.5"></i>Quay lại Quản lý Lớp
-                    </button>
-                    <input type="file" id="import-quiz-file" accept=".json" class="hidden" onchange="importQuizzesJSON(event)">
-                    <button onclick="document.getElementById('import-quiz-file').click()" class="btn-3d bg-amber-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-file-arrow-up mr-1.5"></i>Mở Bài Test (JSON)
-                    </button>
-                    <button onclick="exportQuizzesJSON()" class="btn-3d bg-blue-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Lưu Bài Test (JSON)
                     </button>
                     <button onclick="addNewQuizGroup()" class="btn-3d bg-indigo-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-folder-plus mr-1.5"></i>Bài Test Mới
@@ -395,7 +378,6 @@
                             </div>
                         </div>
 
-                        <!-- CÂU HỎI TRÌNH CHIẾU DÀI ĐƯỢC HIỂN THỊ ĐẦY ĐỦ TỰ DO NỘI DUNG -->
                         <h2 id="live-question-text" class="live-question-text font-black text-amber-300 my-2 leading-snug">Đang tải câu hỏi...</h2>
 
                         <div id="live-audio-container" class="my-1.5 hidden bg-slate-950 p-2 rounded-2xl border border-slate-800 flex items-center space-x-3 flex-none">
@@ -464,7 +446,7 @@
 
     </main>
 
-    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ CHUYÊN NGHIỆP -->
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border-2 border-indigo-500/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 my-auto relative">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -512,7 +494,6 @@
 
             <div class="text-center pt-2 border-t border-slate-800 space-y-2">
                 <button onclick="toggleAuthMode()" id="btn-toggle-auth-mode" class="text-xs text-indigo-400 hover:underline font-bold">Chưa có tài khoản? Đăng ký ngay</button>
-                <p class="text-[10px] text-slate-500 leading-relaxed">Dữ liệu được lưu trên cloud Firebase – đăng nhập cùng Email trên Laptop hoặc Điện thoại đều thấy dữ liệu giống nhau.</p>
             </div>
         </div>
     </div>
@@ -659,7 +640,7 @@
     </div>
 
     <script>
-        // CẤU HÌNH FIREBASE CHÍNH XÁC (ĐÃ ĐỒNG BỘ TÊN BIẾN FIREBASE_CONFIG)
+        // CẤU HÌNH FIREBASE CHÍNH XÁC
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
             authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
@@ -670,7 +651,6 @@
             measurementId: "G-WXY687F7WL"
         };
 
-        // DỮ LIỆU BÀI TEST & ĐỒNG BỘ
         let appData = {
             classes: [
                 {
@@ -760,7 +740,6 @@
             }
         }
 
-        // BẮT THAM SỐ URL KHI ĐIỆN THOẠI QUÉT QR KẾT NỐI
         window.addEventListener('DOMContentLoaded', () => {
             initFirebase();
             loadAuthSession();
@@ -801,7 +780,7 @@
                         updatePhoneQuestionIndicator();
                     }
                 };
-            } catch(err) { console.log('Local BroadcastChannel Error:', err); }
+            } catch(err) {}
 
             if (typeof Peer !== 'undefined') {
                 const pcPeerId = 'QUET_TN_PC_' + syncRoomId;
@@ -856,10 +835,6 @@
                         conn.on('close', function() {
                             updateSyncUIState(true, 'Đã ngắt kết nối Điện thoại');
                         });
-                    });
-
-                    peer.on('error', function(err) {
-                        console.log('PeerJS PC Error:', err);
                     });
                 }
             }
@@ -937,7 +912,6 @@
 
         function startPhoneHDCamera() {
             const video = document.getElementById('phone-qr-video');
-            
             const constraints = {
                 video: {
                     facingMode: "environment",
@@ -994,7 +968,7 @@
                     document.getElementById('phone-torch-btn').classList.remove('hidden');
                     document.getElementById('phone-torch-btn').classList.add('flex');
                 }
-            } catch (e) { console.log('Không lấy được khả năng camera:', e); }
+            } catch (e) {}
         }
 
         function setPhoneZoom(value) {
@@ -1406,27 +1380,18 @@
         }
 
         const FIREBASE_ERROR_MESSAGES = {
-            'auth/invalid-credential': 'Sai Email hoặc Mật khẩu. Nếu bạn chưa có tài khoản, hãy bấm "Chưa có tài khoản? Đăng ký ngay" bên dưới.',
-            'auth/user-not-found': 'Email này chưa được đăng ký. Hãy bấm "Chưa có tài khoản? Đăng ký ngay" để tạo tài khoản mới.',
-            'auth/wrong-password': 'Mật khẩu không đúng. Vui lòng thử lại hoặc bấm "Quên mật khẩu?".',
-            'auth/invalid-email': 'Địa chỉ Email không hợp lệ. Vui lòng kiểm tra lại.',
-            'auth/user-disabled': 'Tài khoản này đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.',
-            'auth/email-already-in-use': 'Email này đã được đăng ký trước đó. Hãy chuyển sang chế độ "Đăng nhập" thay vì đăng ký.',
-            'auth/weak-password': 'Mật khẩu quá yếu. Vui lòng dùng mật khẩu từ 6 ký tự trở lên.',
-            'auth/too-many-requests': 'Bạn đã thử sai quá nhiều lần. Vui lòng đợi vài phút rồi thử lại, hoặc bấm "Quên mật khẩu?" để đặt lại.',
-            'auth/network-request-failed': 'Lỗi kết nối mạng. Vui lòng kiểm tra Internet và thử lại.',
-            'auth/missing-password': 'Vui lòng nhập mật khẩu.',
-            'auth/operation-not-allowed': 'Đăng nhập chưa được bật cho ứng dụng này.',
-            'auth/popup-closed-by-user': 'Cửa sổ đăng nhập đã bị đóng.',
-            'auth/internal-error': 'Lỗi hệ thống Firebase. Vui lòng thử lại sau.'
+            'auth/invalid-credential': 'Sai Email hoặc Mật khẩu.',
+            'auth/user-not-found': 'Email này chưa được đăng ký.',
+            'auth/wrong-password': 'Mật khẩu không đúng.',
+            'auth/invalid-email': 'Địa chỉ Email không hợp lệ.',
+            'auth/email-already-in-use': 'Email này đã được đăng ký trước đó.',
+            'auth/weak-password': 'Mật khẩu quá yếu (tối thiểu 6 ký tự).'
         };
 
         function translateFirebaseError(err) {
             if (!err) return 'Đã xảy ra lỗi không xác định.';
             const code = err.code || '';
-            if (FIREBASE_ERROR_MESSAGES[code]) return FIREBASE_ERROR_MESSAGES[code];
-            if (code) return `Lỗi (${code}). Vui lòng kiểm tra lại.`;
-            return err.message || 'Đã xảy ra lỗi không xác định.';
+            return FIREBASE_ERROR_MESSAGES[code] || err.message || 'Lỗi kết nối hệ thống.';
         }
 
         async function handleForgotPassword() {
@@ -1480,7 +1445,7 @@
                     await firebaseDb.collection('users').doc(cred.user.uid).set({
                         email: email,
                         displayName: displayName || email.split('@')[0],
-                        appData: getDefaultAppData()
+                        appData: appData
                     }, { merge: true });
 
                     currentUser = displayName || email;
@@ -1493,7 +1458,6 @@
                     setTimeout(() => { closeAuthModal(); updateAuthUI(); }, 500);
                 }
             } catch (err) {
-                console.error('Firebase Auth Error:', err.code, err.message);
                 showAuthMessage('error', translateFirebaseError(err));
             } finally {
                 btn.disabled = false;
@@ -1557,6 +1521,7 @@
             }
         }
 
+        // HÀM LƯU DỮ LIỆU TỰ ĐỘNG LÊN ĐÁM MÂY FIREBASE HOẶC BỘ NHỚ CỤC BỘ
         function saveData() {
             try {
                 const key = (firebaseAuth && firebaseAuth.currentUser)
@@ -1566,13 +1531,36 @@
             } catch (e) {}
 
             if (!firebaseAuth || !firebaseAuth.currentUser || !firebaseDb || isLoadingCloudData) return;
+            
             clearTimeout(saveDataTimer);
             saveDataTimer = setTimeout(async () => {
                 try {
                     const uid = firebaseAuth.currentUser.uid;
                     await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
-                } catch (e) {}
+                } catch (e) { console.error('Auto save error:', e); }
             }, 800);
+        }
+
+        // HÀM LƯU THỦ CÔNG KHI BẤM NÚT "LƯU VÀO TÀI KHOẢN"
+        async function manualSaveToCloud() {
+            if (!firebaseAuth || !firebaseAuth.currentUser) {
+                alert('Bạn chưa đăng nhập. Vui lòng bấm "Đăng Nhập / Đăng Ký" ở góc trên để tạo tài khoản và lưu dữ liệu!');
+                openAuthModal();
+                return;
+            }
+
+            const saveBtnText = document.getElementById('save-cloud-text');
+            if (saveBtnText) saveBtnText.innerText = 'Đang lưu...';
+
+            try {
+                const uid = firebaseAuth.currentUser.uid;
+                await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
+                if (saveBtnText) saveBtnText.innerText = '✓ Đã Lưu Thành Công';
+                setTimeout(() => { if (saveBtnText) saveBtnText.innerText = 'Lưu Vào Tài Khoản'; }, 2000);
+            } catch (e) {
+                alert('Lỗi lưu dữ liệu: ' + e.message);
+                if (saveBtnText) saveBtnText.innerText = 'Thử lại';
+            }
         }
 
         function switchTab(tab) {
@@ -1597,66 +1585,6 @@
             currentClass.activeQuizId = quizId;
             saveData();
             switchTab('presentation');
-        }
-
-        function exportClassesJSON() {
-            if (!appData.classes || appData.classes.length === 0) return alert('Không có dữ liệu lớp học nào!');
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData.classes, null, 2));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", `LopHoc_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        }
-
-        function importClassesJSON(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const imported = JSON.parse(evt.target.result);
-                    if (Array.isArray(imported)) {
-                        appData.classes = imported;
-                        if (appData.classes.length > 0) appData.selectedClassId = appData.classes[0].id;
-                        saveData();
-                        renderClasses();
-                        alert('Nhập danh sách lớp học thành công!');
-                    }
-                } catch (err) { alert('Lỗi file JSON!'); }
-            };
-            reader.readAsText(file);
-        }
-
-        function exportQuizzesJSON() {
-            if (!appData.quizzes || appData.quizzes.length === 0) return alert('Không có dữ liệu!');
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData.quizzes, null, 2));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", `BaiTest_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        }
-
-        function importQuizzesJSON(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const imported = JSON.parse(evt.target.result);
-                    if (Array.isArray(imported)) {
-                        appData.quizzes = imported;
-                        if (appData.quizzes.length > 0) appData.selectedQuizId = appData.quizzes[0].id;
-                        saveData();
-                        renderQuizzesView();
-                        alert('Nhập bài test thành công!');
-                    }
-                } catch (err) { alert('Lỗi file JSON!'); }
-            };
-            reader.readAsText(file);
         }
 
         function renderQuizDropdowns() {
