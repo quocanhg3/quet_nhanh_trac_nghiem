@@ -317,6 +317,13 @@
                     <button onclick="switchTab('classes')" class="btn-3d bg-slate-800 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center border border-slate-700">
                         <i class="fa-solid fa-arrow-left mr-1.5"></i>Quay lại Quản lý Lớp
                     </button>
+                    <button onclick="exportQuizJson()" class="btn-3d bg-slate-800 border border-slate-600 text-cyan-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center" title="Xuất bài test hiện tại ra file JSON">
+                        <i class="fa-solid fa-file-export mr-1.5"></i>Xuất JSON
+                    </button>
+                    <button onclick="document.getElementById('import-quiz-json-input').click()" class="btn-3d bg-slate-800 border border-slate-600 text-violet-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center" title="Nhập bài test từ file JSON">
+                        <i class="fa-solid fa-file-import mr-1.5"></i>Nhập JSON
+                    </button>
+                    <input type="file" id="import-quiz-json-input" accept=".json,application/json" class="hidden" onchange="importQuizJson(event)">
                     <button onclick="addNewQuizGroup()" class="btn-3d bg-indigo-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-folder-plus mr-1.5"></i>Bài Test Mới
                     </button>
@@ -588,14 +595,16 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block font-bold text-slate-300 mb-1">Đáp án đúng:</label>
-                    <select id="input-q-correct" class="w-full bg-amber-400 font-black text-slate-950 rounded-xl p-2 text-xs outline-none">
-                        <option value="A">Đáp án A</option>
-                        <option value="B">Đáp án B</option>
-                        <option value="C">Đáp án C</option>
-                        <option value="D">Đáp án D</option>
-                    </select>
+                <div class="bg-amber-400/10 border-2 border-amber-400/50 rounded-2xl p-3">
+                    <label class="block font-black text-amber-400 mb-2 text-sm"><i class="fa-solid fa-check-double mr-1.5"></i>Chọn đáp án đúng (bắt buộc):</label>
+                    <input type="hidden" id="input-q-correct" value="A">
+                    <div class="grid grid-cols-4 gap-2" id="correct-answer-btns">
+                        <button type="button" onclick="setCorrectAnswer('A')" data-opt="A" class="correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-amber-400 text-slate-950 ring-2 ring-amber-200">A</button>
+                        <button type="button" onclick="setCorrectAnswer('B')" data-opt="B" class="correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-slate-800 text-slate-300 border border-slate-600">B</button>
+                        <button type="button" onclick="setCorrectAnswer('C')" data-opt="C" class="correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-slate-800 text-slate-300 border border-slate-600">C</button>
+                        <button type="button" onclick="setCorrectAnswer('D')" data-opt="D" class="correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-slate-800 text-slate-300 border border-slate-600">D</button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2">Nhấn vào A / B / C / D để chọn đáp án đúng cho câu hỏi này.</p>
                 </div>
             </div>
 
@@ -1454,8 +1463,20 @@
                 } else {
                     await firebaseAuth.signInWithEmailAndPassword(email, password);
                     currentUser = firebaseAuth.currentUser.displayName || email;
-                    showAuthMessage('success', 'Đăng nhập thành công!');
-                    setTimeout(() => { closeAuthModal(); updateAuthUI(); }, 500);
+                    isLoadingCloudData = true;
+                    try {
+                        await loadDataFromCloud(firebaseAuth.currentUser.uid);
+                        migrateAppData();
+                    } finally {
+                        isLoadingCloudData = false;
+                    }
+                    showAuthMessage('success', 'Đăng nhập thành công! Đã tải dữ liệu tài khoản.');
+                    setTimeout(() => {
+                        closeAuthModal();
+                        updateAuthUI();
+                        renderClasses();
+                        renderQuizDropdowns();
+                    }, 500);
                 }
             } catch (err) {
                 showAuthMessage('error', translateFirebaseError(err));
@@ -1493,10 +1514,18 @@
                     if (!appData.responses) appData.responses = {};
                     if (!Array.isArray(appData.classes)) appData.classes = [];
                     if (!Array.isArray(appData.quizzes)) appData.quizzes = [];
+                    if (!appData.progress) appData.progress = {};
                     safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
                 } else {
-                    appData = getDefaultAppData();
-                    await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
+                    if (!appData || !Array.isArray(appData.classes)) appData = getDefaultAppData();
+                    if (!appData.responses) appData.responses = {};
+                    if (!appData.progress) appData.progress = {};
+                    await firebaseDb.collection('users').doc(uid).set({
+                        appData: appData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        email: (firebaseAuth.currentUser && firebaseAuth.currentUser.email) || ''
+                    }, { merge: true });
+                    safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
                 }
             } catch (e) {
                 const cached = safeGetItem('plickers_cloud_cache_' + uid);
@@ -1535,14 +1564,23 @@
             clearTimeout(saveDataTimer);
             saveDataTimer = setTimeout(async () => {
                 try {
+                    if (!firebaseAuth.currentUser || isLoadingCloudData) return;
                     const uid = firebaseAuth.currentUser.uid;
-                    await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
+                    await firebaseDb.collection('users').doc(uid).set({
+                        appData: appData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        email: firebaseAuth.currentUser.email || ''
+                    }, { merge: true });
                 } catch (e) { console.error('Auto save error:', e); }
             }, 800);
         }
 
         // HÀM LƯU THỦ CÔNG KHI BẤM NÚT "LƯU VÀO TÀI KHOẢN"
         async function manualSaveToCloud() {
+            if (!firebaseReady && !initFirebase()) {
+                alert('Firebase chưa sẵn sàng. Kiểm tra kết nối mạng và thử lại.');
+                return;
+            }
             if (!firebaseAuth || !firebaseAuth.currentUser) {
                 alert('Bạn chưa đăng nhập. Vui lòng bấm "Đăng Nhập / Đăng Ký" ở góc trên để tạo tài khoản và lưu dữ liệu!');
                 openAuthModal();
@@ -1554,13 +1592,92 @@
 
             try {
                 const uid = firebaseAuth.currentUser.uid;
-                await firebaseDb.collection('users').doc(uid).set({ appData: appData }, { merge: true });
+                safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
+                await firebaseDb.collection('users').doc(uid).set({
+                    appData: appData,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    email: firebaseAuth.currentUser.email || '',
+                    displayName: firebaseAuth.currentUser.displayName || ''
+                }, { merge: true });
                 if (saveBtnText) saveBtnText.innerText = '✓ Đã Lưu Thành Công';
-                setTimeout(() => { if (saveBtnText) saveBtnText.innerText = 'Lưu Vào Tài Khoản'; }, 2000);
+                setTimeout(() => { if (saveBtnText) saveBtnText.innerText = 'Lưu Vào Tài Khoản'; }, 2500);
             } catch (e) {
-                alert('Lỗi lưu dữ liệu: ' + e.message);
+                console.error('manualSaveToCloud error:', e);
+                let msg = e.message || String(e);
+                if (msg.includes('permission') || msg.includes('PERMISSION')) {
+                    msg = 'Không có quyền ghi Firestore. Kiểm tra Rules cho collection "users".';
+                } else if (msg.includes('exceeds') || msg.includes('too large') || msg.includes('size')) {
+                    msg = 'Dữ liệu quá lớn (ảnh base64). Hãy dùng link URL ảnh thay vì upload file.';
+                }
+                alert('Lỗi lưu dữ liệu: ' + msg);
                 if (saveBtnText) saveBtnText.innerText = 'Thử lại';
             }
+        }
+
+        function setCorrectAnswer(opt) {
+            const hidden = document.getElementById('input-q-correct');
+            if (hidden) hidden.value = opt;
+            document.querySelectorAll('.correct-opt-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-opt') === opt;
+                btn.className = isActive
+                    ? 'correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-amber-400 text-slate-950 ring-2 ring-amber-200'
+                    : 'correct-opt-btn btn-3d py-3 rounded-xl font-black text-base bg-slate-800 text-slate-300 border border-slate-600';
+            });
+        }
+
+        function exportQuizJson() {
+            const currentQuiz = appData.quizzes.find(q => q.id === appData.selectedQuizId);
+            if (!currentQuiz) return alert('Chưa chọn bài test nào!');
+            const payload = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                quiz: JSON.parse(JSON.stringify(currentQuiz))
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (currentQuiz.title || 'quiz').replace(/[^\w\u00C0-\u1EF9\-]+/g, '_') + '.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function importQuizJson(event) {
+            const file = event.target.files && event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let quiz = data.quiz || data;
+                    if (!quiz || typeof quiz !== 'object') throw new Error('File JSON không đúng định dạng bài test.');
+                    if (!Array.isArray(quiz.questions)) quiz.questions = [];
+                    quiz.id = 'quiz_' + Date.now();
+                    quiz.title = (quiz.title || 'Bài test nhập JSON') + ' (nhập)';
+                    quiz.questions = quiz.questions.map((q, i) => ({
+                        id: q.id || ('q_' + Date.now() + '_' + i),
+                        text: q.text || q.question || ('Câu ' + (i + 1)),
+                        imageUrl: q.imageUrl || '',
+                        audioUrl: q.audioUrl || '',
+                        options: q.options || { A: '', B: '', C: '', D: '' },
+                        optionImages: q.optionImages || { A: '', B: '', C: '', D: '' },
+                        correct: q.correct || 'A'
+                    }));
+                    appData.quizzes.push(quiz);
+                    appData.selectedQuizId = quiz.id;
+                    saveData();
+                    renderQuizzesView();
+                    renderQuizDropdowns();
+                    alert('Đã nhập bài test "' + quiz.title + '" với ' + quiz.questions.length + ' câu hỏi.');
+                    switchTab('quizzes');
+                } catch (err) {
+                    alert('Lỗi đọc JSON: ' + (err.message || err));
+                }
+            };
+            reader.readAsText(file);
         }
 
         function switchTab(tab) {
@@ -1837,6 +1954,7 @@
                 document.getElementById(`input-q-opt${opt}-img`).value = '';
             });
             document.getElementById('input-q-correct').value = 'A';
+            if (typeof setCorrectAnswer === 'function') setCorrectAnswer('A');
             document.getElementById('question-modal').classList.remove('hidden');
             document.getElementById('question-modal').classList.add('flex');
         }
@@ -1861,6 +1979,7 @@
             document.getElementById('input-q-optC-img').value = q.optionImages?.C || '';
             document.getElementById('input-q-optD-img').value = q.optionImages?.D || '';
             document.getElementById('input-q-correct').value = q.correct || 'A';
+            if (typeof setCorrectAnswer === 'function') setCorrectAnswer(q.correct || 'A');
 
             document.getElementById('question-modal').classList.remove('hidden');
             document.getElementById('question-modal').classList.add('flex');
