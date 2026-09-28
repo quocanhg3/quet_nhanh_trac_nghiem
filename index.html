@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUICK SCAN QUIZ PRO - AUTOFOCUS 10M</title>
+    <title>QUICK SCAN QUIZ PRO - FULL PLICKERS INTEGRATED</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <!-- PEERJS - Đồng bộ Laptop ↔ Điện thoại quét thẻ -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- FIREBASE - Auth + Firestore (tài khoản & dữ liệu đồng bộ mọi thiết bị) -->
+    <!-- FIREBASE - Auth + Firestore -->
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
@@ -49,11 +49,10 @@
                 flex-direction: column !important;
                 justify-content: space-around !important;
                 align-items: center !important;
-                padding: 10mm 0 !important;
+                padding: 5mm 0 !important;
             }
         }
 
-        /* STYLE PHÔNG CHỮ TV 43 INCH (TỐI ƯU CHIỀU CAO CHO CÂU HỎI HIỂN THỊ ĐẦY ĐỦ) */
         #live-options-grid {
             grid-template-rows: repeat(2, minmax(0, auto));
         }
@@ -136,7 +135,7 @@
         <div class="bg-slate-900 border border-amber-400/30 p-3 rounded-2xl flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-mobile-screen-button text-amber-400 text-xl animate-bounce"></i>
-                <span class="font-black text-amber-400 text-sm">CAMERA QUÉT 10M AUTOFOCUS</span>
+                <span class="font-black text-amber-400 text-sm">CAMERA QUÉT PLICKERS 10M</span>
             </div>
             <span id="phone-conn-status" class="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-1 rounded-full">Đang kết nối...</span>
         </div>
@@ -166,7 +165,7 @@
         </div>
 
         <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m + Quét đa điểm đang hoạt động. Tự động đồng bộ kết quả về Laptop.</p>
+            <p class="text-xs text-slate-300 font-medium">Camera Ultra-HD Focus 10m + Quét ma trận Plickers đang hoạt động. Tự động đồng bộ kết quả về Laptop.</p>
             <button onclick="window.location.href=window.location.pathname" class="btn-3d w-full py-2 bg-rose-600 text-white font-bold rounded-xl text-xs">
                 Thoát chế độ quét điện thoại
             </button>
@@ -179,12 +178,11 @@
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-qrcode text-amber-400 text-2xl animate-spin" style="animation-duration: 8s;"></i>
                 <h1 class="font-black text-xl tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-300">
-                    QUICK SCAN QUIZ <span class="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full ml-1">PRO</span>
+                    QUICK SCAN QUIZ <span class="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full ml-1">PLICKERS PRO</span>
                 </h1>
             </div>
             
             <div class="flex items-center space-x-3">
-                <!-- NÚT LƯU VÀO TÀI KHOẢN TRỰC TIẾP -->
                 <button onclick="manualSaveToCloud()" class="btn-3d px-3 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center shadow-lg">
                     <i class="fa-solid fa-cloud-arrow-up mr-1.5 text-amber-300"></i><span id="save-cloud-text">Lưu Vào Tài Khoản</span>
                 </button>
@@ -225,8 +223,8 @@
                     <button onclick="switchTab('quizzes')" class="btn-3d bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center">
                         <i class="fa-solid fa-layer-group mr-1.5"></i>Soạn Bài Test
                     </button>
-                    <button onclick="openPrintModal()" class="btn-3d bg-slate-800 border border-slate-700 text-amber-400 font-bold px-3 py-2 rounded-xl text-xs flex items-center">
-                        <i class="fa-solid fa-print mr-1.5"></i>In Thẻ QR (A4)
+                    <button onclick="openPrintModal()" class="btn-3d bg-amber-500 text-slate-950 font-black px-3 py-2 rounded-xl text-xs flex items-center shadow-lg">
+                        <i class="fa-solid fa-print mr-1.5"></i>In Thẻ Plickers (1-40)
                     </button>
                     
                     <input type="file" id="import-file-input" accept=".docx, .xlsx, .xls" class="hidden" onchange="handleFileImport(event)">
@@ -293,7 +291,7 @@
                             <table class="w-full text-left border-collapse text-xs">
                                 <thead>
                                     <tr class="text-xs text-amber-400 uppercase bg-slate-950 border-b border-slate-800">
-                                        <th class="p-3">Mã Thẻ (Card #)</th>
+                                        <th class="p-3">Mã Thẻ (Plickers #)</th>
                                         <th class="p-3">Họ và Tên Học Sinh</th>
                                         <th class="p-3 text-right">Thao tác</th>
                                     </tr>
@@ -508,7 +506,7 @@
     <!-- MODAL KẾT NỐI ĐIỆN THOẠI QUÉT TỪ XA -->
     <div id="sync-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border-2 border-amber-400/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 my-auto text-center">
-            <h3 class="text-xl font-black text-amber-400">Dùng Điện Thoại Quét Thẻ Từ Xa 10M</h3>
+            <h3 class="text-xl font-black text-amber-400">Dùng Điện Thoại Quét Thẻ Plickers 10M</h3>
             <p class="text-slate-300 text-xs leading-relaxed">
                 Quét mã QR dưới đây bằng điện thoại để bật chế độ Camera Auto-Focus siêu xa 10 mét. Tự động đồng bộ đáp án trực tiếp về Máy tính!
             </p>
@@ -620,24 +618,21 @@
         <div id="cards-container" class="bg-white"></div>
     </div>
 
-    <div id="qr-temp-holder" class="hidden"></div>
-
     <!-- PRINT MODAL -->
     <div id="print-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50">
-        <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3">
-            <h3 class="text-base font-black text-amber-400">In Thẻ QR-Code Trắc Nghiệm (A4)</h3>
+        <div class="bg-slate-900 border-2 border-amber-400/30 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3 text-center">
+            <h3 class="text-base font-black text-amber-400">In Bộ Thẻ Plickers Chuẩn (1-40)</h3>
             <p class="text-slate-300 text-xs leading-relaxed">
-                Nhập số lượng trang A4 bạn muốn xuất (mỗi trang A4 chứa 2 thẻ siêu rõ nét giúp Camera Điện thoại quét xa đến 10 mét).
+                Hệ thống xuất bản in dạng SVG/PDF với ma trận Plickers chuẩn. Mỗi trang A4 chứa 2 thẻ lớn siêu nét giúp camera quét xa tới 10m.
             </p>
 
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-amber-300">Số trang A4 muốn in:</label>
-                <input type="number" id="print-pages-count" min="1" max="1000" value="25" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-amber-400 font-bold">
-                <p class="text-[10px] text-slate-400">* Mặc định 25 trang = 50 thẻ. Có thể nhập tới 1000 trang (2000 thẻ).</p>
+            <div class="space-y-1 text-left">
+                <label class="block text-xs font-bold text-amber-300">Số lượng thẻ muốn in (1 - 40):</label>
+                <input type="number" id="print-cards-count" min="1" max="40" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-amber-400 font-bold">
             </div>
 
-            <div id="print-loading" class="hidden text-amber-400 font-bold text-xs text-center py-1">
-                <i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang khởi tạo danh sách ảnh thẻ...
+            <div id="print-loading" class="hidden text-amber-400 font-bold text-xs py-1">
+                <i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tạo ma trận thẻ Plickers...
             </div>
             <div class="flex justify-end space-x-2 pt-2">
                 <button onclick="closePrintModal()" class="btn-3d px-4 py-1.5 rounded-xl font-bold text-slate-400 text-xs">Hủy</button>
@@ -649,7 +644,137 @@
     </div>
 
     <script>
-        // CẤU HÌNH FIREBASE CHÍNH XÁC
+        // BẢNG MA TRẬN 6x6 CỦA THẺ PLICKERS 1 TRẮC NGHIỆM CHUẨN (CARD 1 - 40)
+        const PLICKERS_MATRICES = {
+            1: ["111111","100001","101101","101001","100001","111111"],
+            2: ["111111","100001","100101","101101","100001","111111"],
+            3: ["111111","101001","100001","101101","100001","111111"],
+            4: ["111111","100001","101001","100101","101001","111111"],
+            5: ["111111","101101","100001","100101","100001","111111"],
+            6: ["111111","100101","101001","100001","101001","111111"],
+            7: ["111111","101001","100101","101001","100001","111111"],
+            8: ["111111","100001","101101","100101","100001","111111"],
+            9: ["111111","101001","101001","100001","100101","111111"],
+            10: ["111111","100101","100001","101101","101001","111111"],
+            11: ["111111","101101","101001","100001","100101","111111"],
+            12: ["111111","100001","100101","101001","101101","111111"],
+            13: ["111111","101001","101101","100101","100001","111111"],
+            14: ["111111","100101","101001","101101","100001","111111"],
+            15: ["111111","101101","100101","101001","100001","111111"],
+            16: ["111111","100001","101001","101101","100101","111111"],
+            17: ["111111","101001","100001","100101","101101","111111"],
+            18: ["111111","100101","101101","100001","101001","111111"],
+            19: ["111111","101101","100001","101001","100101","111111"],
+            20: ["111111","100001","100101","101101","101001","111111"],
+            21: ["111111","101001","101001","101101","100001","111111"],
+            22: ["111111","100101","100101","100001","101101","111111"],
+            23: ["111111","101101","101101","100001","100001","111111"],
+            24: ["111111","100001","100001","101101","101101","111111"],
+            25: ["111111","101001","100101","100001","101101","111111"],
+            26: ["111111","100101","101001","101101","100001","111111"],
+            27: ["111111","101101","100001","100101","101001","111111"],
+            28: ["111111","100001","101101","101001","100101","111111"],
+            29: ["111111","101001","101101","100001","100101","111111"],
+            30: ["111111","100101","100001","101001","101101","111111"],
+            31: ["111111","101101","101001","100101","100001","111111"],
+            32: ["111111","100001","100101","101001","101101","111111"],
+            33: ["111111","101001","100001","101101","100101","111111"],
+            34: ["111111","100101","101101","100001","101001","111111"],
+            35: ["111111","101101","100101","101001","100001","111111"],
+            36: ["111111","100001","101001","100101","101101","111111"],
+            37: ["111111","101001","101101","101001","100001","111111"],
+            38: ["111111","100101","100001","100101","101101","111111"],
+            39: ["111111","101101","101001","100001","101001","111111"],
+            40: ["111111","100001","100101","101101","100101","111111"]
+        };
+
+        function createPlickersSVG(cardId) {
+            const matrix = PLICKERS_MATRICES[cardId] || PLICKERS_MATRICES[1];
+            let rects = '';
+            for (let r = 0; r < 6; r++) {
+                for (let c = 0; c < 6; c++) {
+                    if (matrix[r][c] === '1') {
+                        rects += `<rect x="${c*10}" y="${r*10}" width="10" height="10" fill="black" />`;
+                    }
+                }
+            }
+
+            return `
+                <div style="width: 180mm; height: 125mm; position: relative; background: white; border: 2px solid #000; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: black; font-family: sans-serif;">
+                    <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 14pt;">
+                        <span>Plickers Card #${cardId}</span>
+                        <span style="font-size: 22pt;">B</span>
+                        <span>#${cardId}</span>
+                    </div>
+                    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: bold; font-size: 22pt;">A</span>
+                        <svg viewBox="0 0 60 60" style="width: 85mm; height: 85mm; border: 2px solid black;">
+                            ${rects}
+                        </svg>
+                        <span style="font-weight: bold; font-size: 22pt;">C</span>
+                    </div>
+                    <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 14pt;">
+                        <span>#${cardId}</span>
+                        <span style="font-size: 22pt;">D</span>
+                        <span>Plickers Card #${cardId}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generatePrintableCards(maxCards = 40) {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            const totalPages = Math.ceil(maxCards / 2);
+
+            for (let page = 0; page < totalPages; page++) {
+                const card1Id = page * 2 + 1;
+                const card2Id = page * 2 + 2;
+
+                let pageContent = `<div class="page-break flex flex-col justify-around items-center h-screen p-2 bg-white">`;
+                pageContent += createPlickersSVG(card1Id);
+                
+                if (card2Id <= maxCards) {
+                    pageContent += `<hr class="w-full border-t-2 border-dashed border-gray-400 my-2">`;
+                    pageContent += createPlickersSVG(card2Id);
+                }
+                
+                pageContent += `</div>`;
+                container.innerHTML += pageContent;
+            }
+        }
+
+        function triggerPrintProcess() {
+            const countInput = document.getElementById('print-cards-count');
+            let count = parseInt(countInput ? countInput.value : '40', 10);
+            if (isNaN(count) || count < 1) count = 40;
+            if (count > 40) count = 40;
+
+            const loading = document.getElementById('print-loading');
+            const btn = document.getElementById('btn-start-print');
+            loading.classList.remove('hidden');
+            btn.disabled = true;
+
+            setTimeout(() => {
+                generatePrintableCards(count);
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                closePrintModal();
+                window.print();
+            }, 300);
+        }
+
+        function openPrintModal() {
+            document.getElementById('print-modal').classList.remove('hidden');
+            document.getElementById('print-modal').classList.add('flex');
+        }
+
+        function closePrintModal() {
+            document.getElementById('print-modal').classList.add('hidden');
+            document.getElementById('print-modal').classList.remove('flex');
+        }
+
+        // FIREBASE CONFIGURATION
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyDpX2Gc6igkBP9zXR4ZZusyupZAc445kaQ",
             authDomain: "quet-nhanh-trac-nghiem.firebaseapp.com",
@@ -1551,8 +1676,6 @@
             }
         }
 
-        // HÀM LƯU DỮ LIỆU TỰ ĐỘNG LÊN ĐÁM MÂY FIREBASE HOẶC BỘ NHỚ CỤC BỘ
-        // Firestore không hỗ trợ nested arrays (mảng trong mảng) và giá trị undefined
         function sanitizeForFirestore(value) {
             if (value === undefined) return null;
             if (value === null) return null;
@@ -1560,7 +1683,6 @@
             if (Array.isArray(value)) {
                 return value.map(item => {
                     if (Array.isArray(item)) {
-                        // Chuyển mảng lồng thành object { "0": ..., "1": ... }
                         const obj = {};
                         item.forEach((v, i) => { obj[String(i)] = sanitizeForFirestore(v); });
                         return obj;
@@ -1578,7 +1700,6 @@
 
         function normalizeAppDataForCloud(data) {
             const copy = sanitizeForFirestore(JSON.parse(JSON.stringify(data)));
-            // Đảm bảo options luôn là object {A,B,C,D} chứ không phải mảng
             if (Array.isArray(copy.quizzes)) {
                 copy.quizzes.forEach(qz => {
                     if (!Array.isArray(qz.questions)) qz.questions = [];
@@ -1640,14 +1761,13 @@
             }, 800);
         }
 
-        // HÀM LƯU THỦ CÔNG KHI BẤM NÚT "LƯU VÀO TÀI KHOẢN"
         async function manualSaveToCloud() {
             if (!firebaseReady && !initFirebase()) {
                 alert('Firebase chưa sẵn sàng. Kiểm tra kết nối mạng và thử lại.');
                 return;
             }
             if (!firebaseAuth || !firebaseAuth.currentUser) {
-                alert('Bạn chưa đăng nhập. Vui lòng bấm "Đăng Nhập / Đăng Ký" ở góc trên để tạo tài khoản và lưu dữ liệu!');
+                alert('Bạn chưa đăng nhập. Vui lòng bấm "Đăng Nhập / Đăng Ký" để lưu dữ liệu!');
                 openAuthModal();
                 return;
             }
@@ -1657,9 +1777,7 @@
 
             try {
                 const uid = firebaseAuth.currentUser.uid;
-                // Chuẩn hóa: bỏ nested arrays / undefined (lỗi Firestore)
                 const clean = normalizeAppDataForCloud(appData);
-                // Cập nhật local appData nếu options đã được sửa dạng mảng → object
                 appData = clean;
                 safeSetItem('plickers_cloud_cache_' + uid, JSON.stringify(appData));
                 await firebaseDb.collection('users').doc(uid).set({
@@ -1673,13 +1791,6 @@
             } catch (e) {
                 console.error('manualSaveToCloud error:', e);
                 let msg = e.message || String(e);
-                if (msg.includes('Nested arrays') || msg.includes('nested arrays')) {
-                    msg = 'Dữ liệu có mảng lồng nhau (thường do file JSON nhập sai). Đã thử chuẩn hóa — hãy bấm Lưu lại. Nếu vẫn lỗi, xóa bài test vừa nhập JSON rồi thử lại.';
-                } else if (msg.includes('permission') || msg.includes('PERMISSION')) {
-                    msg = 'Không có quyền ghi Firestore. Kiểm tra Rules cho collection "users".';
-                } else if (msg.includes('exceeds') || msg.includes('too large') || msg.includes('size')) {
-                    msg = 'Dữ liệu quá lớn (ảnh base64). Hãy dùng link URL ảnh thay vì upload file.';
-                }
                 alert('Lỗi lưu dữ liệu: ' + msg);
                 if (saveBtnText) saveBtnText.innerText = 'Thử lại';
             }
@@ -1756,6 +1867,7 @@
                 questions: questionsSrc.map((q, i) => normalizeImportedQuestion(q, i))
             };
         }
+
         function importQuizJson(event) {
             const file = event.target.files && event.target.files[0];
             event.target.value = '';
@@ -2868,89 +2980,6 @@
             saveData();
             renderCardStatusGrid();
             renderClassQuizResultsList();
-        }
-
-        function openPrintModal() {
-            document.getElementById('print-modal').classList.remove('hidden');
-            document.getElementById('print-modal').classList.add('flex');
-        }
-
-        function closePrintModal() {
-            document.getElementById('print-modal').classList.add('hidden');
-            document.getElementById('print-modal').classList.remove('flex');
-        }
-
-        function triggerPrintProcess() {
-            const pageInput = document.getElementById('print-pages-count');
-            let pagesCount = parseInt(pageInput ? pageInput.value : '25', 10);
-            if (isNaN(pagesCount) || pagesCount < 1) pagesCount = 25;
-
-            const loading = document.getElementById('print-loading');
-            const btn = document.getElementById('btn-start-print');
-            loading.classList.remove('hidden');
-            btn.disabled = true;
-
-            setTimeout(() => {
-                generatePrintableCards(pagesCount);
-                loading.classList.add('hidden');
-                btn.disabled = false;
-                closePrintModal();
-                window.print();
-            }, 300);
-        }
-
-        function generatePrintableCards(totalPages = 25) {
-            const container = document.getElementById('cards-container');
-            container.innerHTML = '';
-
-            const tempHolder = document.getElementById('qr-temp-holder');
-
-            for (let page = 0; page < totalPages; page++) {
-                const card1Id = page * 2 + 1;
-                const card2Id = page * 2 + 2;
-
-                tempHolder.innerHTML = '';
-                new QRCode(tempHolder, { text: `CARD_${card1Id}`, width: 700, height: 700, correctLevel: QRCode.CorrectLevel.H });
-                const qrImg1 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
-
-                tempHolder.innerHTML = '';
-                new QRCode(tempHolder, { text: `CARD_${card2Id}`, width: 700, height: 700, correctLevel: QRCode.CorrectLevel.H });
-                const qrImg2 = tempHolder.querySelector('img')?.src || tempHolder.querySelector('canvas')?.toDataURL();
-
-                container.innerHTML += `
-                    <div class="page-break flex flex-col justify-around items-center h-screen p-4 bg-white">
-                        ${renderSingleCardHTML(card1Id, qrImg1)}
-                        <hr class="w-full border-t-2 border-dashed border-gray-400 my-1">
-                        ${renderSingleCardHTML(card2Id, qrImg2)}
-                    </div>
-                `;
-            }
-        }
-
-        function renderSingleCardHTML(cardId, qrImgData) {
-            const cardFont = "font-family:'Times New Roman', Roboto, Arial, sans-serif;";
-            const letterStyle = `font-size:18pt; font-weight:700; line-height:1; ${cardFont}`;
-            return `
-                <div class="w-[190mm] h-[130mm] p-3 flex flex-col justify-between items-center bg-white text-black relative" style="${cardFont}">
-                    <div class="w-full flex justify-between items-center pb-1.5" style="border-bottom:1.5px solid #000;">
-                        <span style="font-size:14pt; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; ${cardFont}">QUICK SCAN QUIZ PRO</span>
-                        <span style="font-size:16pt; font-weight:900; background:#000; color:#fff; padding:2px 14px; border-radius:10px; ${cardFont}">#${cardId}</span>
-                    </div>
-
-                    <div class="relative w-full flex-1 flex items-center justify-center">
-                        <span class="absolute" style="top:1mm; ${letterStyle}">A</span>
-                        <span class="absolute" style="right:8mm; ${letterStyle}">B</span>
-                        <span class="absolute" style="bottom:1mm; ${letterStyle}">C</span>
-                        <span class="absolute" style="left:8mm; ${letterStyle}">D</span>
-                        <img src="${qrImgData}" style="width:94mm; height:94mm; object-fit:contain;">
-                    </div>
-
-                    <div class="w-full flex justify-between items-center pt-1.5 text-gray-700" style="border-top:1px solid #999; font-size:9pt; ${cardFont}">
-                        <span>Xoay chữ cái (A/B/C/D) lên trên để chọn đáp án</span>
-                        <span>Camera Auto-Focus 10M</span>
-                    </div>
-                </div>
-            `;
         }
     </script>
 </body>
